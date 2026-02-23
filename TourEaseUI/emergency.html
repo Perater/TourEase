@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TourEase – Safety & Emergency</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:   #0A9B8C;
+    --amber:  #F59E0B;
+    --cream:  #FDF8F0;
+    --ink:    #1A2332;
+    --muted:  #6B7A8D;
+    --white:  #FFFFFF;
+    --border: rgba(0,0,0,.07);
+    --red:    #E11D48;
+    --red-d:  #BE123C;
+    --red-s:  #FFF1F2;
+    --orange: #EA580C;
+    --green:  #16A34A;
+    --blue:   #2563EB;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #d8dde0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px; flex-wrap: wrap;
+    padding: 48px 24px; min-height: 100vh;
+  }
+
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .phone-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: #445; }
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 48px; overflow: hidden; position: relative;
+    box-shadow: 0 40px 100px rgba(0,0,0,.28), 0 0 0 10px #1A2332;
+    flex-shrink: 0; background: var(--cream);
+  }
+
+  /* ── Shared bottom nav ── */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--white); border-top: 1px solid var(--border);
+    display: flex; padding: 12px 0 24px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,.06); z-index: 30;
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .nav-item.active .nav-label { color: var(--red); font-weight: 700; }
+
+  /* ══════════════════════════════════════
+     SCREEN A — MAIN EMERGENCY HUB
+  ══════════════════════════════════════ */
+  .hub-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  /* Dark red header */
+  .hub-header {
+    background: linear-gradient(160deg, #1A0A0F 0%, #3B0A1A 100%);
+    padding: 52px 20px 36px;
+    position: relative; overflow: hidden;
+  }
+  .hub-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  /* Pulse ring behind SOS */
+  .hub-pulse {
+    position: absolute; right: 24px; top: 50%;
+    transform: translateY(-50%);
+    width: 90px; height: 90px;
+  }
+  .hub-pulse::before, .hub-pulse::after {
+    content:''; position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid rgba(225,29,72,.4);
+    animation: ringPulse 2s ease-out infinite;
+  }
+  .hub-pulse::after { animation-delay: .7s; }
+  @keyframes ringPulse {
+    0%   { transform: scale(.7); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .hub-hdr-inner { position: relative; z-index: 1; }
+  .hub-safe-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(22,163,74,.2); border: 1px solid rgba(22,163,74,.4);
+    border-radius: 20px; padding: 5px 12px; margin-bottom: 14px;
+  }
+  .safe-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; animation: blink 1.5s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  .safe-text { font-size: 12px; color: #4ADE80; font-weight: 700; letter-spacing: .5px; }
+
+  .hub-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--white); margin-bottom: 5px; }
+  .hub-loc { font-size: 13px; color: rgba(255,255,255,.45); display: flex; align-items: center; gap: 5px; }
+
+  /* ── BIG SOS BUTTON ── */
+  .sos-wrap {
+    display: flex; justify-content: center; padding: 28px 20px 10px;
+    flex-shrink: 0;
+  }
+  .sos-outer {
+    width: 160px; height: 160px; border-radius: 50%;
+    background: rgba(225,29,72,.1);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; cursor: pointer;
+  }
+  .sos-outer::before {
+    content:''; position: absolute; inset: -8px; border-radius: 50%;
+    border: 2px dashed rgba(225,29,72,.25);
+    animation: rotateDash 12s linear infinite;
+  }
+  @keyframes rotateDash { to { transform: rotate(360deg); } }
+  .sos-btn {
+    width: 130px; height: 130px; border-radius: 50%;
+    background: linear-gradient(145deg, var(--red), var(--red-d));
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    box-shadow:
+      0 0 0 4px rgba(225,29,72,.2),
+      0 16px 48px rgba(225,29,72,.5),
+      inset 0 2px 4px rgba(255,255,255,.15);
+    cursor: pointer;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .sos-btn:hover { transform: scale(1.04); box-shadow: 0 0 0 4px rgba(225,29,72,.3), 0 20px 60px rgba(225,29,72,.6); }
+  .sos-icon { font-size: 36px; }
+  .sos-label { font-size: 20px; font-weight: 900; color: var(--white); letter-spacing: 2px; }
+  .sos-sub { font-size: 10px; color: rgba(255,255,255,.7); letter-spacing: 1px; }
+  .sos-hint { text-align: center; font-size: 11px; color: var(--muted); margin-top: 10px; }
+
+  /* ── Quick action grid ── */
+  .quick-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; padding: 16px 20px 0; flex-shrink: 0;
+  }
+  .quick-card {
+    border-radius: 18px; padding: 16px;
+    display: flex; gap: 12px; align-items: center;
+    cursor: pointer; transition: transform .15s;
+    border: 1.5px solid transparent;
+  }
+  .quick-card:hover { transform: scale(1.02); }
+  .quick-card.police  { background: #EFF6FF; border-color: #BFDBFE; }
+  .quick-card.hospital{ background: #FFF1F2; border-color: #FECDD3; }
+  .quick-card.helpdesk{ background: #FFFBEB; border-color: #FDE68A; }
+  .quick-card.fire    { background: #FFF7ED; border-color: #FED7AA; }
+
+  .qc-icon-wrap {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+    flex-shrink: 0;
+  }
+  .qc-icon-wrap.police   { background: #DBEAFE; }
+  .qc-icon-wrap.hospital { background: #FFE4E6; }
+  .qc-icon-wrap.helpdesk { background: #FEF3C7; }
+  .qc-icon-wrap.fire     { background: #FFEDD5; }
+
+  .qc-text {}
+  .qc-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .qc-dist { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .qc-call { font-size: 11px; font-weight: 700; margin-top: 3px; }
+  .qc-call.police   { color: var(--blue); }
+  .qc-call.hospital { color: var(--red);  }
+  .qc-call.helpdesk { color: var(--amber);}
+  .qc-call.fire     { color: var(--orange);}
+
+  /* ── Weather advisory ── */
+  .advisory-strip {
+    margin: 16px 20px 0; border-radius: 16px;
+    background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+    border: 1.5px solid #FDE68A; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .adv-icon { font-size: 28px; }
+  .adv-text { flex: 1; }
+  .adv-title { font-size: 13px; font-weight: 700; color: #92400E; }
+  .adv-sub   { font-size: 12px; color: #B45309; margin-top: 2px; }
+  .adv-arrow { font-size: 18px; color: #D97706; }
+
+  /* ══════════════════════════════════════
+     SCREEN B — NEARBY HELP / MAP
+  ══════════════════════════════════════ */
+  .nearby-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  .nearby-header {
+    background: linear-gradient(160deg, #1A0A0F 0%, #3B0A1A 100%);
+    padding: 52px 20px 28px; position: relative; overflow: hidden;
+  }
+  .nearby-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .nearby-hdr-inner { position: relative; z-index: 1; }
+  .nearby-back { font-size: 20px; color: rgba(255,255,255,.5); margin-bottom: 10px; cursor: pointer; }
+  .nearby-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--white); }
+  .nearby-sub { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+  /* Filter tabs */
+  .nearby-tabs {
+    display: flex; gap: 8px; padding: 22px 20px 0; overflow-x: auto; flex-shrink: 0;
+  }
+  .nearby-tabs::-webkit-scrollbar { display: none; }
+  .ntab {
+    flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    background: var(--white); color: var(--muted);
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .ntab.active { background: var(--red); color: var(--white); border-color: var(--red); }
+
+  /* Mini map block */
+  .nearby-map {
+    margin: 16px 20px 0; border-radius: 20px; overflow: hidden;
+    height: 180px; position: relative; flex-shrink: 0;
+    background:
+      linear-gradient(rgba(168,216,213,.6) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168,216,213,.6) 1px, transparent 1px),
+      linear-gradient(180deg, #C8EBE8 0%, #A8D0CB 100%);
+    background-size: 28px 28px, 28px 28px, 100% 100%;
+  }
+  .nmap-road-h { position: absolute; width: 100%; height: 10px; background: rgba(255,255,255,.7); border-radius: 5px; }
+  .nmap-road-v { position: absolute; height: 100%; width: 10px; background: rgba(255,255,255,.7); border-radius: 5px; }
+  .r-h1 { top: 45%; }
+  .r-v1 { left: 40%; }
+
+  .nmap-you {
+    position: absolute; top: 50%; left: 45%;
+    transform: translate(-50%,-50%);
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--blue);
+    border: 3px solid var(--white);
+    box-shadow: 0 0 0 6px rgba(37,99,235,.2), 0 4px 12px rgba(37,99,235,.4);
+    z-index: 5;
+  }
+
+  /* Emergency pins */
+  .npin {
+    position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 4;
+  }
+  .npin-bubble {
+    border-radius: 10px; padding: 5px 9px;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; gap: 4px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18); white-space: nowrap; color: var(--white);
+  }
+  .npin-tail { width: 2px; height: 6px; }
+  .npin-dot  { width: 6px; height: 6px; border-radius: 50%; }
+  .npin.police .npin-bubble  { background: var(--blue); }
+  .npin.police .npin-tail    { background: var(--blue); }
+  .npin.police .npin-dot     { background: var(--blue); }
+  .npin.hospital .npin-bubble{ background: var(--red); }
+  .npin.hospital .npin-tail  { background: var(--red); }
+  .npin.hospital .npin-dot   { background: var(--red); }
+  .npin.helpdesk .npin-bubble{ background: var(--amber); }
+  .npin.helpdesk .npin-tail  { background: var(--amber); }
+  .npin.helpdesk .npin-dot   { background: var(--amber); }
+
+  .np1 { top: 15%; left: 12%; }
+  .np2 { top: 22%; right: 18%; }
+  .np3 { bottom: 20%; left: 55%; }
+
+  .nmap-offline {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(26,35,50,.85); border-radius: 8px;
+    padding: 4px 9px; display: flex; align-items: center; gap: 4px;
+  }
+  .nmap-ol-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ADE80; }
+  .nmap-ol-txt { font-size: 10px; color: rgba(255,255,255,.8); font-weight: 700; }
+
+  /* Nearby list */
+  .nearby-list { flex: 1; overflow-y: auto; padding: 16px 20px 110px; }
+  .nearby-list::-webkit-scrollbar { display: none; }
+
+  .nearby-item {
+    background: var(--white); border-radius: 18px;
+    padding: 14px 16px; margin-bottom: 10px;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: transform .15s;
+  }
+  .nearby-item:hover { transform: translateX(3px); }
+  .nearby-item.top { border-color: var(--red); background: var(--red-s); }
+
+  .ni-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .ni-icon.police   { background: #DBEAFE; }
+  .ni-icon.hospital { background: #FFE4E6; }
+  .ni-icon.helpdesk { background: #FEF3C7; }
+
+  .ni-info { flex: 1; }
+  .ni-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .ni-addr { font-size: 12px; color: var(--muted); }
+  .ni-tags { display: flex; gap: 6px; margin-top: 6px; }
+  .ni-tag {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
+    letter-spacing: .4px; text-transform: uppercase;
+  }
+  .ni-tag.open    { background: #DCFCE7; color: var(--green); }
+  .ni-tag.nearest { background: var(--red-s); color: var(--red); }
+
+  .ni-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .ni-dist  { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .ni-call-btn {
+    background: var(--red); color: var(--white);
+    border: none; border-radius: 10px; padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; gap: 4px;
+  }
+  .ni-call-btn.police   { background: var(--blue); }
+  .ni-call-btn.helpdesk { background: var(--amber); }
+
+  /* ══════════════════════════════════════
+     SCREEN C — WEATHER / TRAVEL ADVISORY
+  ══════════════════════════════════════ */
+  .alert-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  .alert-header {
+    background: linear-gradient(160deg, #1A0A0F, #3B0A1A);
+    padding: 52px 20px 28px; position: relative; overflow: hidden;
+  }
+  .alert-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .alert-hdr-inner { position: relative; z-index: 1; }
+  .alert-back { font-size: 20px; color: rgba(255,255,255,.5); margin-bottom: 10px; cursor: pointer; }
+  .alert-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--white); }
+  .alert-sub { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+  .alert-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 110px; }
+  .alert-scroll::-webkit-scrollbar { display: none; }
+
+  /* Weather card */
+  .weather-card {
+    background: linear-gradient(135deg, #1E3A5F, #2D5A8E);
+    border-radius: 22px; padding: 20px;
+    margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+  .wc-bg-icon {
+    position: absolute; right: 16px; top: 16px;
+    font-size: 72px; opacity: .15;
+  }
+  .wc-location { font-size: 12px; color: rgba(255,255,255,.55); margin-bottom: 8px; }
+  .wc-temp-row { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 4px; }
+  .wc-temp { font-family: 'Playfair Display', serif; font-size: 52px; color: var(--white); line-height: 1; }
+  .wc-feels { font-size: 13px; color: rgba(255,255,255,.5); padding-bottom: 6px; }
+  .wc-desc { font-size: 15px; color: rgba(255,255,255,.8); font-weight: 600; margin-bottom: 16px; }
+  .wc-stats { display: flex; gap: 0; }
+  .wc-stat {
+    flex: 1; padding: 10px 0; border-right: 1px solid rgba(255,255,255,.1); text-align: center;
+  }
+  .wc-stat:last-child { border-right: none; }
+  .wc-stat-val { font-size: 15px; font-weight: 700; color: var(--white); }
+  .wc-stat-lab { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* Hourly forecast */
+  .hourly-row {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px;
+  }
+  .hourly-row::-webkit-scrollbar { display: none; }
+  .hour-item {
+    flex-shrink: 0; background: var(--white); border-radius: 14px;
+    padding: 12px 10px; text-align: center; min-width: 64px;
+    border: 1.5px solid var(--border);
+  }
+  .hour-item.now { background: var(--teal); border-color: var(--teal); }
+  .hour-time { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .hour-item.now .hour-time { color: rgba(255,255,255,.8); }
+  .hour-icon { font-size: 20px; margin-bottom: 6px; }
+  .hour-temp { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .hour-item.now .hour-temp { color: var(--white); }
+
+  /* Alert cards */
+  .alert-section-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 12px; margin-top: 4px;
+  }
+
+  .alert-card {
+    border-radius: 18px; padding: 16px;
+    margin-bottom: 12px; display: flex; gap: 14px; align-items: flex-start;
+    border: 1.5px solid transparent;
+  }
+  .alert-card.warning { background: #FFFBEB; border-color: #FDE68A; }
+  .alert-card.info    { background: #EFF6FF; border-color: #BFDBFE; }
+  .alert-card.safe    { background: #F0FDF4; border-color: #BBF7D0; }
+  .alert-card.danger  { background: var(--red-s); border-color: #FECDD3; }
+
+  .alert-card-icon { font-size: 28px; flex-shrink: 0; }
+  .alert-card-body { flex: 1; }
+  .alert-card-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .alert-card-desc  { font-size: 13px; line-height: 1.6; color: #3D4A58; }
+  .alert-card-time  { font-size: 11px; color: var(--muted); margin-top: 6px; font-weight: 600; }
+
+  .alert-severity {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .sev-warning { background: #FEF3C7; color: #D97706; }
+  .sev-info    { background: #DBEAFE; color: #1D4ED8; }
+  .sev-safe    { background: #DCFCE7; color: var(--green); }
+  .sev-danger  { background: var(--red-s); color: var(--red); }
+
+  /* Travel tips list */
+  .tip-list { background: var(--white); border-radius: 18px; overflow: hidden; border: 1.5px solid var(--border); margin-bottom: 16px; }
+  .tip-item {
+    display: flex; gap: 12px; align-items: center; padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tip-item:last-child { border-bottom: none; }
+  .tip-icon { font-size: 20px; }
+  .tip-text { font-size: 13px; color: var(--ink); line-height: 1.5; }
+  .tip-check { font-size: 16px; color: var(--green); margin-left: auto; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ PHONE A: MAIN EMERGENCY HUB ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="hub-screen">
+
+      <!-- Header -->
+      <div class="hub-header">
+        <div class="hub-pulse"></div>
+        <div class="hub-hdr-inner">
+          <div class="hub-safe-badge">
+            <div class="safe-dot"></div>
+            <div class="safe-text">YOU ARE SAFE</div>
+          </div>
+          <div class="hub-title">Safety & Emergency</div>
+          <div class="hub-loc">📍 Ermita, Manila · Offline Ready</div>
+        </div>
+      </div>
+
+      <!-- SOS Button -->
+      <div class="sos-wrap">
+        <div class="sos-outer">
+          <div class="sos-btn">
+            <div class="sos-icon">🆘</div>
+            <div class="sos-label">SOS</div>
+            <div class="sos-sub">HOLD TO CALL</div>
+          </div>
+        </div>
+      </div>
+      <div class="sos-hint">Hold 3 seconds to trigger emergency call + share location</div>
+
+      <!-- Quick action grid -->
+      <div class="quick-grid">
+        <div class="quick-card police">
+          <div class="qc-icon-wrap police">🚔</div>
+          <div class="qc-text">
+            <div class="qc-name">Police Station</div>
+            <div class="qc-dist">📍 0.4 km away</div>
+            <div class="qc-call police">Call 117</div>
+          </div>
+        </div>
+        <div class="quick-card hospital">
+          <div class="qc-icon-wrap hospital">🏥</div>
+          <div class="qc-text">
+            <div class="qc-name">Hospital</div>
+            <div class="qc-dist">📍 1.1 km away</div>
+            <div class="qc-call hospital">Call 911</div>
+          </div>
+        </div>
+        <div class="quick-card helpdesk">
+          <div class="qc-icon-wrap helpdesk">🧭</div>
+          <div class="qc-text">
+            <div class="qc-name">Tourist Help</div>
+            <div class="qc-dist">📍 0.7 km away</div>
+            <div class="qc-call helpdesk">Call DOT</div>
+          </div>
+        </div>
+        <div class="quick-card fire">
+          <div class="qc-icon-wrap fire">🚒</div>
+          <div class="qc-text">
+            <div class="qc-name">Fire Station</div>
+            <div class="qc-dist">📍 1.3 km away</div>
+            <div class="qc-call fire">Call 160</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weather advisory -->
+      <div class="advisory-strip">
+        <div class="adv-icon">⚠️</div>
+        <div class="adv-text">
+          <div class="adv-title">Weather Advisory · Moderate Rain</div>
+          <div class="adv-sub">Expected 3PM–7PM · Bring umbrella</div>
+        </div>
+        <div class="adv-arrow">›</div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item active"><div class="nav-icon">🆘</div><div class="nav-label">Safety</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">① Emergency Hub</div>
+</div>
+
+<!-- ══════════════════ PHONE B: NEARBY HELP ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="nearby-screen">
+
+      <div class="nearby-header">
+        <div class="nearby-hdr-inner">
+          <div class="nearby-back">←</div>
+          <div class="nearby-title">Nearby Help</div>
+          <div class="nearby-sub">Ermita, Manila · 8 locations found</div>
+        </div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="nearby-tabs">
+        <div class="ntab active">🚨 All</div>
+        <div class="ntab">🚔 Police</div>
+        <div class="ntab">🏥 Hospital</div>
+        <div class="ntab">🧭 Tourist Help</div>
+        <div class="ntab">🚒 Fire</div>
+      </div>
+
+      <!-- Mini map -->
+      <div class="nearby-map">
+        <div class="nmap-road-h r-h1"></div>
+        <div class="nmap-road-v r-v1"></div>
+        <div class="nmap-you"></div>
+
+        <div class="npin police np1">
+          <div class="npin-bubble">🚔 Ermita Police</div>
+          <div class="npin-tail"></div>
+          <div class="npin-dot"></div>
+        </div>
+        <div class="npin hospital np2">
+          <div class="npin-bubble">🏥 PGH</div>
+          <div class="npin-tail"></div>
+          <div class="npin-dot"></div>
+        </div>
+        <div class="npin helpdesk np3">
+          <div class="npin-bubble">🧭 DOT Office</div>
+          <div class="npin-tail"></div>
+          <div class="npin-dot"></div>
+        </div>
+        <div class="nmap-offline">
+          <div class="nmap-ol-dot"></div>
+          <div class="nmap-ol-txt">OFFLINE</div>
+        </div>
+      </div>
+
+      <!-- Nearby list -->
+      <div class="nearby-list">
+
+        <div class="nearby-item top">
+          <div class="ni-icon hospital">🏥</div>
+          <div class="ni-info">
+            <div class="ni-name">Philippine General Hospital</div>
+            <div class="ni-addr">Taft Ave, Manila · 24 hrs</div>
+            <div class="ni-tags">
+              <span class="ni-tag nearest">Nearest</span>
+              <span class="ni-tag open">Open</span>
+            </div>
+          </div>
+          <div class="ni-right">
+            <div class="ni-dist">0.6 km</div>
+            <button class="ni-call-btn">📞 911</button>
+          </div>
+        </div>
+
+        <div class="nearby-item">
+          <div class="ni-icon police">🚔</div>
+          <div class="ni-info">
+            <div class="ni-name">Ermita Police Station</div>
+            <div class="ni-addr">M.H. del Pilar St · 24 hrs</div>
+            <div class="ni-tags">
+              <span class="ni-tag open">Open</span>
+            </div>
+          </div>
+          <div class="ni-right">
+            <div class="ni-dist">0.4 km</div>
+            <button class="ni-call-btn police">📞 117</button>
+          </div>
+        </div>
+
+        <div class="nearby-item">
+          <div class="ni-icon helpdesk">🧭</div>
+          <div class="ni-info">
+            <div class="ni-name">DOT Tourist Help Desk</div>
+            <div class="ni-addr">Kalaw Ave · 8AM–6PM</div>
+            <div class="ni-tags">
+              <span class="ni-tag open">Open</span>
+            </div>
+          </div>
+          <div class="ni-right">
+            <div class="ni-dist">0.7 km</div>
+            <button class="ni-call-btn helpdesk">📞 DOT</button>
+          </div>
+        </div>
+
+        <div class="nearby-item">
+          <div class="ni-icon hospital">🏥</div>
+          <div class="ni-info">
+            <div class="ni-name">Ospital ng Maynila</div>
+            <div class="ni-addr">Quirino Ave · 24 hrs</div>
+            <div class="ni-tags">
+              <span class="ni-tag open">Open</span>
+            </div>
+          </div>
+          <div class="ni-right">
+            <div class="ni-dist">1.4 km</div>
+            <button class="ni-call-btn">📞 911</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item active"><div class="nav-icon">🆘</div><div class="nav-label">Safety</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">② Nearby Help</div>
+</div>
+
+<!-- ══════════════════ PHONE C: WEATHER & TRAVEL ADVISORY ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="alert-screen">
+
+      <div class="alert-header">
+        <div class="alert-hdr-inner">
+          <div class="alert-back">←</div>
+          <div class="alert-title">Weather & Advisories</div>
+          <div class="alert-sub">Manila · Updated offline · Mar 15</div>
+        </div>
+      </div>
+
+      <div class="alert-scroll">
+
+        <!-- Weather card -->
+        <div class="weather-card">
+          <div class="wc-bg-icon">⛅</div>
+          <div class="wc-location">📍 Ermita, Manila</div>
+          <div class="wc-temp-row">
+            <div class="wc-temp">28°</div>
+            <div class="wc-feels">Feels like 32°</div>
+          </div>
+          <div class="wc-desc">Partly Cloudy · Rain expected PM</div>
+          <div class="wc-stats">
+            <div class="wc-stat">
+              <div class="wc-stat-val">72%</div>
+              <div class="wc-stat-lab">Humidity</div>
+            </div>
+            <div class="wc-stat">
+              <div class="wc-stat-val">18 km/h</div>
+              <div class="wc-stat-lab">Wind</div>
+            </div>
+            <div class="wc-stat">
+              <div class="wc-stat-val">65%</div>
+              <div class="wc-stat-lab">Rain</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hourly -->
+        <div class="hourly-row">
+          <div class="hour-item now">
+            <div class="hour-time">Now</div>
+            <div class="hour-icon">⛅</div>
+            <div class="hour-temp">28°</div>
+          </div>
+          <div class="hour-item">
+            <div class="hour-time">1 PM</div>
+            <div class="hour-icon">🌤️</div>
+            <div class="hour-temp">30°</div>
+          </div>
+          <div class="hour-item">
+            <div class="hour-time">3 PM</div>
+            <div class="hour-icon">🌧️</div>
+            <div class="hour-temp">27°</div>
+          </div>
+          <div class="hour-item">
+            <div class="hour-time">5 PM</div>
+            <div class="hour-icon">⛈️</div>
+            <div class="hour-temp">25°</div>
+          </div>
+          <div class="hour-item">
+            <div class="hour-time">7 PM</div>
+            <div class="hour-icon">🌦️</div>
+            <div class="hour-temp">24°</div>
+          </div>
+          <div class="hour-item">
+            <div class="hour-time">9 PM</div>
+            <div class="hour-icon">🌙</div>
+            <div class="hour-temp">23°</div>
+          </div>
+        </div>
+
+        <!-- Active Advisories -->
+        <div class="alert-section-title">Active Advisories</div>
+
+        <div class="alert-card danger">
+          <div class="alert-card-icon">🌧️</div>
+          <div class="alert-card-body">
+            <div class="alert-severity sev-danger">⚠ High Alert</div>
+            <div class="alert-card-title">Typhoon Signal No. 1</div>
+            <div class="alert-card-desc">Low pressure area moving near Metro Manila. Expect strong winds and heavy rainfall from 3PM onwards. Avoid outdoor activities.</div>
+            <div class="alert-card-time">Issued: 6:00 AM · PAGASA</div>
+          </div>
+        </div>
+
+        <div class="alert-card warning">
+          <div class="alert-card-icon">🚧</div>
+          <div class="alert-card-body">
+            <div class="alert-severity sev-warning">⚡ Notice</div>
+            <div class="alert-card-title">Road Closure – Roxas Blvd</div>
+            <div class="alert-card-desc">Roxas Boulevard closed for National Day event from 8AM–8PM. Use alternative routes via Taft Ave.</div>
+            <div class="alert-card-time">Today · Mar 15</div>
+          </div>
+        </div>
+
+        <div class="alert-card info">
+          <div class="alert-card-icon">🎉</div>
+          <div class="alert-card-body">
+            <div class="alert-severity sev-info">ℹ Event</div>
+            <div class="alert-card-title">Flores de Mayo Festival</div>
+            <div class="alert-card-desc">Procession along Intramuros 5PM–8PM. Expect heavy foot traffic. Great opportunity to experience local culture!</div>
+            <div class="alert-card-time">Today · Intramuros</div>
+          </div>
+        </div>
+
+        <!-- Travel safety tips -->
+        <div class="alert-section-title" style="margin-top:8px;">Travel Safety Tips</div>
+        <div class="tip-list">
+          <div class="tip-item">
+            <div class="tip-icon">☂️</div>
+            <div class="tip-text">Carry an umbrella — afternoon rain expected</div>
+            <div class="tip-check">✓</div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-icon">💧</div>
+            <div class="tip-text">Stay hydrated — heat index is high today</div>
+            <div class="tip-check">✓</div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-icon">📱</div>
+            <div class="tip-text">Keep this app open for offline emergency access</div>
+            <div class="tip-check">✓</div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-icon">🏥</div>
+            <div class="tip-text">Nearest hospital saved: Philippine General Hospital</div>
+            <div class="tip-check">✓</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item active"><div class="nav-icon">🆘</div><div class="nav-label">Safety</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">③ Weather & Advisories</div>
+</div>
+
+</body>
+</html>

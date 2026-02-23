@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TourEase – Language & Culture Helper</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:   #0A9B8C;
+    --amber:  #F59E0B;
+    --cream:  #FDF8F0;
+    --ink:    #1A2332;
+    --muted:  #6B7A8D;
+    --white:  #FFFFFF;
+    --border: rgba(0,0,0,.07);
+    --violet: #7C3AED;
+    --violet-l: #EDE9FE;
+    --rose:   #E11D48;
+    --green:  #16A34A;
+    --purple-hdr: linear-gradient(160deg, #1A0A2E 0%, #2D1060 100%);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #dbd8e8;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px; flex-wrap: wrap;
+    padding: 48px 24px; min-height: 100vh;
+  }
+
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .phone-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: #445; }
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 48px; overflow: hidden; position: relative;
+    box-shadow: 0 40px 100px rgba(0,0,0,.28), 0 0 0 10px #1A2332;
+    flex-shrink: 0; background: var(--cream);
+  }
+
+  /* ── Shared bottom nav ── */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--white); border-top: 1px solid var(--border);
+    display: flex; padding: 12px 0 24px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,.06); z-index: 30;
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .nav-item.active .nav-label { color: var(--violet); font-weight: 700; }
+
+  /* ══════════════════════════════════════
+     SCREEN A — PHRASEBOOK MAIN
+  ══════════════════════════════════════ */
+  .phrase-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  .phrase-header {
+    background: var(--purple-hdr);
+    padding: 52px 20px 32px;
+    position: relative; overflow: hidden;
+  }
+  .phrase-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  /* Decorative orbs */
+  .orb {
+    position: absolute; border-radius: 50%;
+    background: rgba(124,58,237,.25);
+  }
+  .orb1 { width: 180px; height: 180px; right: -50px; top: -50px; }
+  .orb2 { width: 100px; height: 100px; left: -20px; bottom: 20px; background: rgba(245,158,11,.12); }
+
+  .phrase-hdr-inner { position: relative; z-index: 1; }
+  .phrase-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--white); margin-bottom: 5px; }
+  .phrase-sub { font-size: 13px; color: rgba(255,255,255,.4); margin-bottom: 18px; }
+
+  /* Language selector */
+  .lang-selector {
+    display: flex; gap: 10px; align-items: center;
+    background: rgba(255,255,255,.08); border-radius: 16px; padding: 12px 16px;
+  }
+  .lang-box {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+  }
+  .lang-flag { font-size: 24px; }
+  .lang-info { }
+  .lang-name { font-size: 14px; font-weight: 700; color: var(--white); }
+  .lang-native { font-size: 11px; color: rgba(255,255,255,.4); }
+  .lang-swap {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer; flex-shrink: 0;
+    color: rgba(255,255,255,.7);
+  }
+
+  /* Search bar */
+  .phrase-search {
+    margin: 22px 20px 0; flex-shrink: 0;
+    background: var(--white); border-radius: 14px;
+    padding: 13px 16px; display: flex; align-items: center; gap: 10px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,.06);
+  }
+  .phrase-search span { font-size: 18px; }
+  .phrase-search p { font-size: 14px; color: var(--muted); }
+
+  /* Category chips */
+  .phrase-cats {
+    display: flex; gap: 8px; padding: 16px 20px 0; overflow-x: auto; flex-shrink: 0;
+  }
+  .phrase-cats::-webkit-scrollbar { display: none; }
+  .pcat {
+    flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    background: var(--white); color: var(--muted);
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .pcat.active { background: var(--violet); color: var(--white); border-color: var(--violet); }
+
+  /* Phrase list */
+  .phrase-list { flex: 1; overflow-y: auto; padding: 16px 20px 110px; }
+  .phrase-list::-webkit-scrollbar { display: none; }
+
+  .phrase-card {
+    background: var(--white); border-radius: 18px;
+    padding: 16px; margin-bottom: 10px;
+    border: 1.5px solid var(--border);
+    cursor: pointer; transition: all .15s;
+    position: relative; overflow: hidden;
+  }
+  .phrase-card:hover { border-color: var(--violet); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,58,237,.1); }
+  .phrase-card.fav { border-color: var(--amber); }
+
+  .phrase-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .phrase-category {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 6px;
+  }
+  .cat-greet  { background: #EDE9FE; color: var(--violet); }
+  .cat-food   { background: #FFE4E6; color: var(--rose); }
+  .cat-emerg  { background: #FFE4E6; color: var(--rose); }
+  .cat-trans  { background: #DBEAFE; color: #2563EB; }
+  .cat-shop   { background: #FEF3C7; color: #D97706; }
+  .cat-direct { background: #DCFCE7; color: var(--green); }
+
+  .phrase-fav-btn { font-size: 18px; cursor: pointer; color: var(--amber); }
+
+  .phrase-english {
+    font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px;
+  }
+  .phrase-local {
+    font-size: 18px; font-weight: 700; color: var(--violet); margin-bottom: 4px;
+    font-family: 'Playfair Display', serif;
+  }
+  .phrase-roman {
+    font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: 10px;
+  }
+  .phrase-card-bottom { display: flex; align-items: center; gap: 8px; }
+  .play-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--violet); color: var(--white);
+    border: none; border-radius: 10px; padding: 7px 14px;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+  }
+  .phrase-tip {
+    font-size: 11px; color: var(--muted); line-height: 1.5; flex: 1;
+  }
+
+  /* ══════════════════════════════════════
+     SCREEN B — CULTURAL DO'S & DON'TS
+  ══════════════════════════════════════ */
+  .culture-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  .culture-header {
+    background: var(--purple-hdr);
+    padding: 52px 20px 28px;
+    position: relative; overflow: hidden;
+  }
+  .culture-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .culture-hdr-inner { position: relative; z-index: 1; }
+  .culture-back { font-size: 20px; color: rgba(255,255,255,.5); margin-bottom: 10px; cursor: pointer; }
+  .culture-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--white); }
+  .culture-sub { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+  /* Context tabs */
+  .context-tabs {
+    display: flex; gap: 8px; padding: 22px 20px 0; overflow-x: auto; flex-shrink: 0;
+  }
+  .context-tabs::-webkit-scrollbar { display: none; }
+  .ctab {
+    flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    background: var(--white); color: var(--muted);
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .ctab.active { background: var(--violet); color: var(--white); border-color: var(--violet); }
+
+  .culture-scroll { flex: 1; overflow-y: auto; padding: 16px 20px 110px; }
+  .culture-scroll::-webkit-scrollbar { display: none; }
+
+  /* Do's & Don'ts split */
+  .dos-donts-header {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+  }
+  .dd-col-title {
+    border-radius: 14px; padding: 10px 14px;
+    font-size: 13px; font-weight: 800; letter-spacing: .5px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .do-title  { background: #DCFCE7; color: var(--green); }
+  .dont-title{ background: #FFE4E6; color: var(--rose); }
+
+  /* Rule cards */
+  .rule-card {
+    border-radius: 16px; padding: 14px 16px;
+    margin-bottom: 10px; display: flex; gap: 12px; align-items: flex-start;
+    border: 1.5px solid transparent;
+  }
+  .rule-card.do   { background: #F0FDF4; border-color: #BBF7D0; }
+  .rule-card.dont { background: #FFF1F2; border-color: #FECDD3; }
+  .rule-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .rule-icon.do   { background: #DCFCE7; }
+  .rule-icon.dont { background: #FFE4E6; }
+  .rule-badge {
+    font-size: 10px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .rule-badge.do   { color: var(--green); }
+  .rule-badge.dont { color: var(--rose); }
+  .rule-text { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.4; margin-bottom: 4px; }
+  .rule-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Culture insight banner */
+  .culture-insight {
+    background: linear-gradient(135deg, var(--violet), #9F67FF);
+    border-radius: 18px; padding: 18px;
+    margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+  .ci-bg { position: absolute; right: -10px; top: -10px; font-size: 64px; opacity: .15; }
+  .ci-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+    text-transform: uppercase; color: rgba(255,255,255,.6); margin-bottom: 6px;
+  }
+  .ci-title { font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 5px; }
+  .ci-text  { font-size: 13px; color: rgba(255,255,255,.75); line-height: 1.6; }
+
+  /* ══════════════════════════════════════
+     SCREEN C — FESTIVALS & EVENTS
+  ══════════════════════════════════════ */
+  .fest-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  .fest-header {
+    background: var(--purple-hdr);
+    padding: 52px 20px 28px;
+    position: relative; overflow: hidden;
+  }
+  .fest-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .fest-orb  { position: absolute; width: 200px; height: 200px; border-radius: 50%; right: -60px; top: -60px; background: rgba(245,158,11,.15); }
+  .fest-hdr-inner { position: relative; z-index: 1; }
+  .fest-back  { font-size: 20px; color: rgba(255,255,255,.5); margin-bottom: 10px; cursor: pointer; }
+  .fest-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--white); }
+  .fest-sub   { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+  /* Month selector */
+  .month-strip {
+    display: flex; gap: 6px; padding: 22px 20px 0; overflow-x: auto; flex-shrink: 0;
+  }
+  .month-strip::-webkit-scrollbar { display: none; }
+  .month-pill {
+    flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    background: var(--white); color: var(--muted); border: 1.5px solid var(--border);
+  }
+  .month-pill.active { background: var(--amber); color: var(--white); border-color: var(--amber); }
+
+  .fest-scroll { flex: 1; overflow-y: auto; padding: 16px 20px 110px; }
+  .fest-scroll::-webkit-scrollbar { display: none; }
+
+  /* Upcoming highlight card */
+  .fest-highlight {
+    border-radius: 22px; overflow: hidden; margin-bottom: 16px;
+    position: relative;
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    padding: 20px;
+  }
+  .fest-hl-bg { position: absolute; right: 10px; top: 10px; font-size: 72px; opacity: .2; }
+  .fest-hl-badge {
+    display: inline-block; background: rgba(255,255,255,.2);
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 11px; font-weight: 700; color: var(--white);
+    letter-spacing: .5px; margin-bottom: 10px;
+  }
+  .fest-hl-name { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--white); margin-bottom: 6px; line-height: 1.2; }
+  .fest-hl-date { font-size: 13px; color: rgba(255,255,255,.75); margin-bottom: 14px; display: flex; align-items: center; gap: 5px; }
+  .fest-hl-desc { font-size: 13px; color: rgba(255,255,255,.85); line-height: 1.6; margin-bottom: 14px; }
+  .fest-hl-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fest-hl-tag {
+    background: rgba(255,255,255,.2); color: var(--white);
+    border-radius: 8px; padding: 4px 10px;
+    font-size: 11px; font-weight: 700;
+  }
+
+  /* Section title */
+  .sec-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 12px; margin-top: 4px;
+  }
+
+  /* Festival list cards */
+  .fest-card {
+    background: var(--white); border-radius: 18px; padding: 14px 16px;
+    margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start;
+    border: 1.5px solid var(--border); cursor: pointer; transition: transform .15s;
+  }
+  .fest-card:hover { transform: translateX(3px); border-color: var(--violet); }
+
+  .fest-date-box {
+    width: 50px; flex-shrink: 0; text-align: center;
+    background: var(--violet-l); border-radius: 12px; padding: 10px 6px;
+  }
+  .fdb-month { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--violet); }
+  .fdb-day   { font-size: 22px; font-weight: 900; color: var(--violet); line-height: 1; }
+
+  .fest-card-info { flex: 1; }
+  .fest-card-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .fest-card-loc  { font-size: 12px; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+  .fest-card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .fc-tag {
+    font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    text-transform: uppercase; letter-spacing: .4px;
+  }
+  .fc-tag.religious { background: #EDE9FE; color: var(--violet); }
+  .fc-tag.cultural  { background: #FEF3C7; color: #D97706; }
+  .fc-tag.food      { background: #FFE4E6; color: var(--rose); }
+  .fc-tag.free      { background: #F3F4F6; color: #4B5563; }
+
+  .fest-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+  .fcd-days { font-size: 12px; font-weight: 700; color: var(--violet); }
+  .fcd-notify {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--violet-l); display: flex; align-items: center; justify-content: center;
+    font-size: 14px; cursor: pointer;
+  }
+  .fcd-notify.on { background: var(--violet); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ PHONE A: PHRASEBOOK ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="phrase-screen">
+
+      <div class="phrase-header">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="phrase-hdr-inner">
+          <div class="phrase-title">Language Helper</div>
+          <div class="phrase-sub">Local phrases with audio · Offline ready</div>
+          <div class="lang-selector">
+            <div class="lang-box">
+              <div class="lang-flag">🇺🇸</div>
+              <div class="lang-info">
+                <div class="lang-name">English</div>
+                <div class="lang-native">Your language</div>
+              </div>
+            </div>
+            <div class="lang-swap">⇄</div>
+            <div class="lang-box" style="justify-content: flex-end; text-align: right;">
+              <div class="lang-info">
+                <div class="lang-name">Filipino</div>
+                <div class="lang-native">Wikang Filipino</div>
+              </div>
+              <div class="lang-flag">🇵🇭</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="phrase-search">
+        <span>🔍</span>
+        <p>Search phrases…</p>
+      </div>
+
+      <!-- Category chips -->
+      <div class="phrase-cats">
+        <div class="pcat active">👋 Greetings</div>
+        <div class="pcat">🍜 Food</div>
+        <div class="pcat">🗺️ Directions</div>
+        <div class="pcat">🛍️ Shopping</div>
+        <div class="pcat">🆘 Emergency</div>
+        <div class="pcat">🏨 Hotel</div>
+      </div>
+
+      <!-- Phrase list -->
+      <div class="phrase-list">
+
+        <div class="phrase-card fav">
+          <div class="phrase-card-top">
+            <span class="phrase-category cat-greet">Greeting</span>
+            <span class="phrase-fav-btn">★</span>
+          </div>
+          <div class="phrase-english">Hello / Good day</div>
+          <div class="phrase-local">Magandang araw po</div>
+          <div class="phrase-roman">mah-GAN-dang AH-raw poh</div>
+          <div class="phrase-card-bottom">
+            <button class="play-btn">▶ Play Audio</button>
+            <div class="phrase-tip">Add "po" to show respect to elders</div>
+          </div>
+        </div>
+
+        <div class="phrase-card">
+          <div class="phrase-card-top">
+            <span class="phrase-category cat-greet">Greeting</span>
+            <span class="phrase-fav-btn" style="color:var(--border)">☆</span>
+          </div>
+          <div class="phrase-english">Thank you very much</div>
+          <div class="phrase-local">Maraming salamat po</div>
+          <div class="phrase-roman">mah-RAH-ming sah-LAH-mat poh</div>
+          <div class="phrase-card-bottom">
+            <button class="play-btn">▶ Play Audio</button>
+            <div class="phrase-tip">"Salamat" alone is casual; add "maraming" for emphasis</div>
+          </div>
+        </div>
+
+        <div class="phrase-card">
+          <div class="phrase-card-top">
+            <span class="phrase-category cat-greet">Greeting</span>
+            <span class="phrase-fav-btn" style="color:var(--border)">☆</span>
+          </div>
+          <div class="phrase-english">Where is the restroom?</div>
+          <div class="phrase-local">Nasaan ang CR?</div>
+          <div class="phrase-roman">nah-SAH-an ang see-AR</div>
+          <div class="phrase-card-bottom">
+            <button class="play-btn">▶ Play Audio</button>
+            <div class="phrase-tip">"CR" means Comfort Room — the local term for restroom</div>
+          </div>
+        </div>
+
+        <div class="phrase-card">
+          <div class="phrase-card-top">
+            <span class="phrase-category cat-food">Food</span>
+            <span class="phrase-fav-btn" style="color:var(--border)">☆</span>
+          </div>
+          <div class="phrase-english">How much does this cost?</div>
+          <div class="phrase-local">Magkano po ito?</div>
+          <div class="phrase-roman">mag-KAH-no poh EE-toh</div>
+          <div class="phrase-card-bottom">
+            <button class="play-btn">▶ Play Audio</button>
+            <div class="phrase-tip">Always use "po" when asking vendors — it shows respect</div>
+          </div>
+        </div>
+
+        <div class="phrase-card">
+          <div class="phrase-card-top">
+            <span class="phrase-category cat-emerg">Emergency</span>
+            <span class="phrase-fav-btn" style="color:var(--border)">☆</span>
+          </div>
+          <div class="phrase-english">Help! I need a doctor!</div>
+          <div class="phrase-local">Saklolo! Kailangan ko ng doktor!</div>
+          <div class="phrase-roman">sak-LOH-loh! kai-LA-ngan ko nang DOK-tor</div>
+          <div class="phrase-card-bottom">
+            <button class="play-btn" style="background:var(--rose)">▶ Play Audio</button>
+            <div class="phrase-tip">Shout clearly in public — Filipinos will always help</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label">Language</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">① Phrasebook</div>
+</div>
+
+<!-- ══════════════════ PHONE B: DO'S & DON'TS ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="culture-screen">
+
+      <div class="culture-header">
+        <div class="orb orb1"></div>
+        <div class="culture-hdr-inner">
+          <div class="culture-back">←</div>
+          <div class="culture-title">Cultural Guide</div>
+          <div class="culture-sub">Do's & Don'ts for the Philippines</div>
+        </div>
+      </div>
+
+      <!-- Context tabs -->
+      <div class="context-tabs">
+        <div class="ctab active">🏛️ General</div>
+        <div class="ctab">⛪ Religious</div>
+        <div class="ctab">🍽️ Dining</div>
+        <div class="ctab">🏖️ Beach</div>
+        <div class="ctab">🏠 Homestay</div>
+      </div>
+
+      <div class="culture-scroll">
+
+        <!-- Culture insight -->
+        <div class="culture-insight" style="margin-top:16px;">
+          <div class="ci-bg">🌺</div>
+          <div class="ci-label">Did You Know?</div>
+          <div class="ci-title">The Filipino Value of "Hiya"</div>
+          <div class="ci-text">Filipinos have a strong sense of "hiya" (sense of shame/propriety). Avoiding public embarrassment — for yourself and others — is key to respectful interaction.</div>
+        </div>
+
+        <!-- Do's & Don'ts -->
+        <div class="dos-donts-header">
+          <div class="dd-col-title do-title">✅ Do's</div>
+          <div class="dd-col-title dont-title">❌ Don'ts</div>
+        </div>
+
+        <div class="rule-card do">
+          <div class="rule-icon do">🙏</div>
+          <div>
+            <div class="rule-badge do">✅ Do</div>
+            <div class="rule-text">Use "po" and "opo" when speaking to elders</div>
+            <div class="rule-desc">These words show deep respect in Filipino culture and are expected when talking to older people.</div>
+          </div>
+        </div>
+
+        <div class="rule-card dont">
+          <div class="rule-icon dont">👟</div>
+          <div>
+            <div class="rule-badge dont">❌ Don't</div>
+            <div class="rule-text">Wear shoes inside someone's home</div>
+            <div class="rule-desc">Always remove footwear before entering a Filipino household — look for shoes by the door as your cue.</div>
+          </div>
+        </div>
+
+        <div class="rule-card do">
+          <div class="rule-icon do">🤝</div>
+          <div>
+            <div class="rule-badge do">✅ Do</div>
+            <div class="rule-text">Accept food or drinks when offered by a host</div>
+            <div class="rule-desc">Refusing hospitality can be seen as rude. Even a small taste is appreciated and respectful.</div>
+          </div>
+        </div>
+
+        <div class="rule-card dont">
+          <div class="rule-icon dont">😤</div>
+          <div>
+            <div class="rule-badge dont">❌ Don't</div>
+            <div class="rule-text">Raise your voice or show anger in public</div>
+            <div class="rule-desc">Filipinos value keeping the peace ("pakikisama"). Loud confrontations cause shame for everyone involved.</div>
+          </div>
+        </div>
+
+        <div class="rule-card do">
+          <div class="rule-icon do">🫱</div>
+          <div>
+            <div class="rule-badge do">✅ Do</div>
+            <div class="rule-text">Use your lips or eyes to point a direction</div>
+            <div class="rule-desc">Pointing with a finger is considered rude. Filipinos often point with their lips or a subtle nod — try it!</div>
+          </div>
+        </div>
+
+        <div class="rule-card dont">
+          <div class="rule-icon dont">📸</div>
+          <div>
+            <div class="rule-badge dont">❌ Don't</div>
+            <div class="rule-text">Take photos inside churches without asking</div>
+            <div class="rule-desc">Many churches prohibit photography during Mass. Always check for signs and ask permission first.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label">Language</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">② Cultural Do's &amp; Don'ts</div>
+</div>
+
+<!-- ══════════════════ PHONE C: FESTIVALS & EVENTS ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="fest-screen">
+
+      <div class="fest-header">
+        <div class="fest-orb"></div>
+        <div class="fest-hdr-inner">
+          <div class="fest-back">←</div>
+          <div class="fest-title">Festivals & Events</div>
+          <div class="fest-sub">Philippines · 2025 Calendar</div>
+        </div>
+      </div>
+
+      <!-- Month strip -->
+      <div class="month-strip">
+        <div class="month-pill">Jan</div>
+        <div class="month-pill">Feb</div>
+        <div class="month-pill active">Mar</div>
+        <div class="month-pill">Apr</div>
+        <div class="month-pill">May</div>
+        <div class="month-pill">Jun</div>
+        <div class="month-pill">Jul</div>
+        <div class="month-pill">Aug</div>
+        <div class="month-pill">Sep</div>
+        <div class="month-pill">Oct</div>
+        <div class="month-pill">Nov</div>
+        <div class="month-pill">Dec</div>
+      </div>
+
+      <div class="fest-scroll">
+
+        <!-- Highlight -->
+        <div class="fest-highlight" style="margin-top:16px;">
+          <div class="fest-hl-bg">🌸</div>
+          <div class="fest-hl-badge">🔥 Happening Soon · 3 days away</div>
+          <div class="fest-hl-name">Flores de Mayo</div>
+          <div class="fest-hl-date">📅 Mar 18 – May 31 · Nationwide</div>
+          <div class="fest-hl-desc">A month-long festival honoring the Virgin Mary through daily flower offerings and colorful processions. One of the most beautiful traditions in the Philippines.</div>
+          <div class="fest-hl-tags">
+            <div class="fest-hl-tag">🕊️ Religious</div>
+            <div class="fest-hl-tag">🌸 Cultural</div>
+            <div class="fest-hl-tag">🆓 Free</div>
+          </div>
+        </div>
+
+        <div class="sec-title">All Events in March</div>
+
+        <div class="fest-card">
+          <div class="fest-date-box">
+            <div class="fdb-month">Mar</div>
+            <div class="fdb-day">15</div>
+          </div>
+          <div class="fest-card-info">
+            <div class="fest-card-name">Araw ng Maynila</div>
+            <div class="fest-card-loc">📍 Manila City · Public Holiday</div>
+            <div class="fest-card-tags">
+              <span class="fc-tag cultural">Cultural</span>
+              <span class="fc-tag free">Free</span>
+            </div>
+          </div>
+          <div class="fest-card-right">
+            <div class="fcd-days">Today</div>
+            <div class="fcd-notify on">🔔</div>
+          </div>
+        </div>
+
+        <div class="fest-card">
+          <div class="fest-date-box">
+            <div class="fdb-month">Mar</div>
+            <div class="fdb-day">18</div>
+          </div>
+          <div class="fest-card-info">
+            <div class="fest-card-name">Flores de Mayo Begins</div>
+            <div class="fest-card-loc">📍 Nationwide · All parishes</div>
+            <div class="fest-card-tags">
+              <span class="fc-tag religious">Religious</span>
+              <span class="fc-tag free">Free</span>
+            </div>
+          </div>
+          <div class="fest-card-right">
+            <div class="fcd-days">In 3 days</div>
+            <div class="fcd-notify on">🔔</div>
+          </div>
+        </div>
+
+        <div class="fest-card">
+          <div class="fest-date-box">
+            <div class="fdb-month">Mar</div>
+            <div class="fdb-day">22</div>
+          </div>
+          <div class="fest-card-info">
+            <div class="fest-card-name">Binondo Food Festival</div>
+            <div class="fest-card-loc">📍 Chinatown, Manila</div>
+            <div class="fest-card-tags">
+              <span class="fc-tag food">Food</span>
+              <span class="fc-tag cultural">Cultural</span>
+            </div>
+          </div>
+          <div class="fest-card-right">
+            <div class="fcd-days">In 7 days</div>
+            <div class="fcd-notify">🔕</div>
+          </div>
+        </div>
+
+        <div class="fest-card">
+          <div class="fest-date-box">
+            <div class="fdb-month">Mar</div>
+            <div class="fdb-day">28</div>
+          </div>
+          <div class="fest-card-info">
+            <div class="fest-card-name">Holy Week Procession</div>
+            <div class="fest-card-loc">📍 Intramuros, Manila</div>
+            <div class="fest-card-tags">
+              <span class="fc-tag religious">Religious</span>
+              <span class="fc-tag free">Free</span>
+            </div>
+          </div>
+          <div class="fest-card-right">
+            <div class="fcd-days">In 13 days</div>
+            <div class="fcd-notify">🔕</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label">Language</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">③ Festivals &amp; Events</div>
+</div>
+
+</body>
+</html>

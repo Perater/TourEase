@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TourEase – Reviews & Experience Sharing</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:   #0A9B8C;
+    --amber:  #F59E0B;
+    --cream:  #FDF8F0;
+    --ink:    #1A2332;
+    --muted:  #6B7A8D;
+    --white:  #FFFFFF;
+    --border: rgba(0,0,0,.07);
+    --gold:   #D97706;
+    --gold-l: #FFFBEB;
+    --star:   #F59E0B;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #e0ddd4;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px; flex-wrap: wrap;
+    padding: 48px 24px; min-height: 100vh;
+  }
+
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .phone-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: #445; }
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 48px; overflow: hidden; position: relative;
+    box-shadow: 0 40px 100px rgba(0,0,0,.28), 0 0 0 10px #1A2332;
+    flex-shrink: 0; background: var(--cream);
+  }
+
+  /* ── Shared bottom nav ── */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--white); border-top: 1px solid var(--border);
+    display: flex; padding: 12px 0 24px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,.06); z-index: 30;
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .nav-item.active .nav-label { color: var(--gold); font-weight: 700; }
+
+  /* Star renderer */
+  .stars { color: var(--star); letter-spacing: 2px; }
+  .stars.sm { font-size: 12px; }
+  .stars.md { font-size: 16px; }
+  .stars.lg { font-size: 22px; }
+
+  /* ══════════════════════════════════════
+     SCREEN A — REVIEWS FEED
+  ══════════════════════════════════════ */
+  .feed-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  .feed-header {
+    background: linear-gradient(160deg, #1A1206 0%, #3D2800 100%);
+    padding: 52px 20px 32px;
+    position: relative; overflow: hidden;
+  }
+  .feed-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .orb-gold {
+    position: absolute; border-radius: 50%;
+    background: rgba(245,158,11,.15);
+  }
+  .og1 { width: 200px; height: 200px; right: -60px; top: -60px; }
+  .og2 { width: 100px; height: 100px; left: -20px; bottom: 10px; background: rgba(10,155,140,.12); }
+
+  .feed-hdr-inner { position: relative; z-index: 1; }
+  .feed-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--white); margin-bottom: 4px; }
+  .feed-sub   { font-size: 13px; color: rgba(255,255,255,.4); margin-bottom: 18px; }
+
+  /* Overall rating strip */
+  .rating-strip {
+    display: flex; gap: 0;
+    background: rgba(255,255,255,.06); border-radius: 16px; overflow: hidden;
+  }
+  .rs-item {
+    flex: 1; padding: 14px 10px; text-align: center;
+    border-right: 1px solid rgba(255,255,255,.08);
+  }
+  .rs-item:last-child { border-right: none; }
+  .rs-val { font-size: 22px; font-weight: 900; color: var(--white); }
+  .rs-stars { font-size: 10px; color: var(--star); letter-spacing: 1px; margin: 2px 0; }
+  .rs-lab  { font-size: 10px; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .5px; }
+
+  /* Sort + filter bar */
+  .feed-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 0; flex-shrink: 0;
+  }
+  .feed-sort { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  .feed-sort span { color: var(--gold); }
+  .feed-filter-btn {
+    background: var(--white); border-radius: 10px; padding: 7px 12px;
+    border: 1.5px solid var(--border);
+    font-size: 12px; font-weight: 700; color: var(--ink);
+    display: flex; align-items: center; gap: 5px; cursor: pointer;
+  }
+
+  /* Category filter chips */
+  .feed-chips {
+    display: flex; gap: 8px; padding: 12px 20px 0; overflow-x: auto; flex-shrink: 0;
+  }
+  .feed-chips::-webkit-scrollbar { display: none; }
+  .fchip {
+    flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    background: var(--white); color: var(--muted); border: 1.5px solid var(--border);
+  }
+  .fchip.active { background: var(--gold); color: var(--white); border-color: var(--gold); }
+
+  /* Feed scroll */
+  .feed-scroll { flex: 1; overflow-y: auto; padding: 14px 20px 110px; }
+  .feed-scroll::-webkit-scrollbar { display: none; }
+
+  /* Review card */
+  .review-card {
+    background: var(--white); border-radius: 20px; padding: 16px;
+    margin-bottom: 14px; border: 1.5px solid var(--border);
+    cursor: pointer; transition: all .15s;
+  }
+  .review-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+  .review-card.featured { border-color: var(--star); box-shadow: 0 4px 20px rgba(245,158,11,.12); }
+
+  .rc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .rc-avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0; font-weight: 700;
+    color: var(--white);
+  }
+  .av-teal   { background: linear-gradient(135deg, var(--teal), #04C5B2); }
+  .av-amber  { background: linear-gradient(135deg, var(--amber), #FCD34D); }
+  .av-violet { background: linear-gradient(135deg, #7C3AED, #A78BFA); }
+  .av-rose   { background: linear-gradient(135deg, #E11D48, #FB7185); }
+
+  .rc-meta { flex: 1; }
+  .rc-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .rc-info { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+  .rc-verified {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #DCFCE7; border-radius: 6px; padding: 2px 6px;
+    font-size: 10px; font-weight: 700; color: #16A34A;
+  }
+  .rc-rating-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .rc-place-tag {
+    background: var(--gold-l); border-radius: 8px; padding: 3px 8px;
+    font-size: 11px; font-weight: 700; color: var(--gold);
+  }
+  .rc-text { font-size: 14px; line-height: 1.65; color: #3D4A58; margin-bottom: 10px; }
+
+  /* Photo strip */
+  .rc-photos { display: flex; gap: 8px; margin-bottom: 10px; }
+  .rc-photo {
+    width: 80px; height: 70px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; flex-shrink: 0; overflow: hidden;
+  }
+  .rp-nature    { background: linear-gradient(135deg, #A8D8A8, #68B684); }
+  .rp-culture   { background: linear-gradient(135deg, #F9C784, #F0A446); }
+  .rp-food      { background: linear-gradient(135deg, #FFB3A7, #E87B6A); }
+  .rp-more {
+    background: rgba(0,0,0,.06); border-radius: 12px;
+    width: 60px; height: 70px; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--muted); flex-shrink: 0;
+  }
+
+  .rc-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .rc-helpful { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  .rc-helpful-btn {
+    background: none; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; font-weight: 700; color: var(--muted);
+    cursor: pointer; display: flex; align-items: center; gap: 4px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .rc-helpful-btn.liked { background: #FEF3C7; border-color: var(--star); color: var(--gold); }
+  .rc-time { font-size: 11px; color: var(--muted); }
+
+  /* Write review FAB */
+  .write-fab {
+    position: absolute; bottom: 90px; right: 20px; z-index: 20;
+    background: linear-gradient(135deg, var(--gold), #F59E0B);
+    border-radius: 20px; padding: 13px 18px;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 28px rgba(217,119,6,.4);
+    cursor: pointer;
+    font-size: 14px; font-weight: 700; color: var(--white);
+  }
+
+  /* ══════════════════════════════════════
+     SCREEN B — WRITE A REVIEW
+  ══════════════════════════════════════ */
+  .write-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  .write-header {
+    background: linear-gradient(160deg, #1A1206, #3D2800);
+    padding: 52px 20px 28px;
+    position: relative; overflow: hidden;
+  }
+  .write-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .write-hdr-inner { position: relative; z-index: 1; }
+  .write-back  { font-size: 20px; color: rgba(255,255,255,.5); margin-bottom: 10px; cursor: pointer; }
+  .write-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--white); }
+  .write-sub   { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+  .write-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 110px; }
+  .write-scroll::-webkit-scrollbar { display: none; }
+
+  /* Place selector */
+  .place-selector {
+    background: var(--white); border-radius: 16px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    border: 1.5px solid var(--gold);
+    box-shadow: 0 0 0 4px rgba(245,158,11,.08);
+    margin-bottom: 20px; cursor: pointer;
+  }
+  .ps-thumb {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(135deg, #A8D8A8, #68B684);
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+    flex-shrink: 0;
+  }
+  .ps-info { flex: 1; }
+  .ps-name { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .ps-loc  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .ps-change { font-size: 12px; color: var(--gold); font-weight: 700; }
+
+  /* Field label */
+  .field-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+
+  /* Star rating picker */
+  .star-picker {
+    background: var(--white); border-radius: 16px; padding: 16px;
+    border: 1.5px solid var(--border); margin-bottom: 20px; text-align: center;
+  }
+  .sp-stars { font-size: 40px; letter-spacing: 6px; color: var(--star); margin-bottom: 8px; cursor: pointer; }
+  .sp-label { font-size: 14px; font-weight: 700; color: var(--gold); }
+  .sp-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Rating aspects */
+  .aspects-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .aspect-item {
+    background: var(--white); border-radius: 14px; padding: 12px;
+    border: 1.5px solid var(--border);
+  }
+  .aspect-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .aspect-stars { font-size: 18px; color: var(--star); letter-spacing: 2px; }
+
+  /* Text area */
+  .review-textarea {
+    background: var(--white); border-radius: 16px; padding: 16px;
+    border: 1.5px solid var(--border); margin-bottom: 20px;
+    min-height: 110px; position: relative;
+  }
+  .rta-placeholder {
+    font-size: 14px; color: var(--muted); line-height: 1.7;
+  }
+  .rta-cursor {
+    display: inline-block; width: 2px; height: 16px;
+    background: var(--gold); vertical-align: middle; margin-left: 2px;
+    animation: blink .8s step-end infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+  .rta-counter { position: absolute; bottom: 10px; right: 14px; font-size: 11px; color: var(--muted); }
+
+  /* Photo upload */
+  .photo-upload {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .photo-slot {
+    width: 76px; height: 76px; border-radius: 14px;
+    border: 2px dashed rgba(0,0,0,.15);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 24px; cursor: pointer; gap: 4px;
+    background: var(--white);
+  }
+  .photo-slot-label { font-size: 10px; color: var(--muted); font-weight: 600; }
+  .photo-filled {
+    width: 76px; height: 76px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; position: relative;
+    flex-shrink: 0;
+  }
+  .photo-remove {
+    position: absolute; top: -6px; right: -6px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #E11D48; color: var(--white);
+    font-size: 10px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; cursor: pointer;
+  }
+
+  /* Submit btn */
+  .submit-btn {
+    width: 100%; padding: 18px; border-radius: 18px; border: none;
+    background: linear-gradient(135deg, var(--gold), #D97706);
+    color: var(--white); font-family: 'DM Sans', sans-serif;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 10px 30px rgba(217,119,6,.35);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  /* ══════════════════════════════════════
+     SCREEN C — GUIDE PROFILE / RATINGS
+  ══════════════════════════════════════ */
+  .guide-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+
+  /* Hero banner */
+  .guide-hero {
+    background: linear-gradient(160deg, #1A1206, #3D2800);
+    padding: 52px 20px 24px;
+    position: relative; overflow: hidden; flex-shrink: 0;
+  }
+  .guide-hero::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .guide-back { position: relative; z-index: 1; font-size: 20px; color: rgba(255,255,255,.5); margin-bottom: 16px; cursor: pointer; }
+  .guide-profile-row {
+    display: flex; gap: 16px; align-items: center; position: relative; z-index: 1;
+  }
+  .guide-avatar-wrap { position: relative; flex-shrink: 0; }
+  .guide-avatar {
+    width: 80px; height: 80px; border-radius: 24px;
+    background: linear-gradient(135deg, var(--teal), #04C5B2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; border: 3px solid rgba(255,255,255,.2);
+  }
+  .guide-verified-badge {
+    position: absolute; bottom: -4px; right: -4px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--gold); border: 2px solid var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .guide-info { flex: 1; }
+  .guide-name { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--white); margin-bottom: 4px; }
+  .guide-title-text { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 8px; }
+  .guide-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .guide-tag {
+    background: rgba(255,255,255,.1); color: rgba(255,255,255,.8);
+    border-radius: 8px; padding: 3px 8px; font-size: 11px; font-weight: 600;
+  }
+
+  /* Stats strip */
+  .guide-stats {
+    display: flex; gap: 0; margin: 24px 20px 0; flex-shrink: 0;
+    background: var(--white); border-radius: 18px; overflow: hidden;
+    border: 1.5px solid var(--border);
+  }
+  .gs-item {
+    flex: 1; padding: 14px 8px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .gs-item:last-child { border-right: none; }
+  .gs-val { font-size: 20px; font-weight: 900; color: var(--ink); }
+  .gs-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 3px; }
+
+  /* Rating breakdown */
+  .rating-breakdown {
+    margin: 16px 20px 0; background: var(--white); border-radius: 18px;
+    padding: 16px; border: 1.5px solid var(--border); flex-shrink: 0;
+  }
+  .rb-header { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .rb-big { font-size: 44px; font-weight: 900; color: var(--ink); line-height: 1; }
+  .rb-right { }
+  .rb-stars { font-size: 20px; color: var(--star); letter-spacing: 2px; }
+  .rb-count { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .rb-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .rb-bar-label { font-size: 11px; color: var(--star); width: 10px; font-weight: 700; }
+  .rb-bar-track { flex: 1; height: 6px; border-radius: 3px; background: #F3F4F6; }
+  .rb-bar-fill  { height: 100%; border-radius: 3px; background: var(--star); }
+  .rb-bar-pct   { font-size: 11px; color: var(--muted); width: 28px; text-align: right; }
+
+  /* Guide reviews */
+  .guide-scroll { flex: 1; overflow-y: auto; padding: 16px 20px 110px; }
+  .guide-scroll::-webkit-scrollbar { display: none; }
+
+  .sec-title { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+
+  .guide-review-card {
+    background: var(--white); border-radius: 16px; padding: 14px;
+    margin-bottom: 10px; border: 1.5px solid var(--border);
+  }
+  .grc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .grc-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: var(--white); flex-shrink: 0; }
+  .grc-name  { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .grc-date  { font-size: 11px; color: var(--muted); }
+  .grc-stars { color: var(--star); font-size: 12px; letter-spacing: 1px; }
+  .grc-text  { font-size: 13px; color: #3D4A58; line-height: 1.6; }
+
+  /* Book CTA */
+  .guide-cta {
+    display: flex; gap: 10px; padding: 16px 20px 32px;
+    background: var(--white); border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .gcta-btn {
+    flex: 1; padding: 15px; border-radius: 14px; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .gcta-secondary { background: var(--cream); color: var(--ink); border: 2px solid var(--border); }
+  .gcta-primary   { background: linear-gradient(135deg, var(--gold), #D97706); color: var(--white); box-shadow: 0 8px 24px rgba(217,119,6,.3); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ PHONE A: REVIEWS FEED ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="feed-screen">
+
+      <div class="feed-header">
+        <div class="orb-gold og1"></div>
+        <div class="orb-gold og2"></div>
+        <div class="feed-hdr-inner">
+          <div class="feed-title">Reviews & Stories</div>
+          <div class="feed-sub">Real experiences from real travelers</div>
+          <div class="rating-strip">
+            <div class="rs-item">
+              <div class="rs-val">4.8</div>
+              <div class="rs-stars">★★★★★</div>
+              <div class="rs-lab">Avg Rating</div>
+            </div>
+            <div class="rs-item">
+              <div class="rs-val">1.2k</div>
+              <div class="rs-stars">· · · · ·</div>
+              <div class="rs-lab">Reviews</div>
+            </div>
+            <div class="rs-item">
+              <div class="rs-val">48</div>
+              <div class="rs-stars">· · · · ·</div>
+              <div class="rs-lab">Guides</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="feed-toolbar">
+        <div class="feed-sort">Sort by: <span>Most Recent</span> ▾</div>
+        <div class="feed-filter-btn">⚙️ Filter</div>
+      </div>
+
+      <!-- Category chips -->
+      <div class="feed-chips">
+        <div class="fchip active">⭐ All</div>
+        <div class="fchip">🌿 Nature</div>
+        <div class="fchip">🏛️ Culture</div>
+        <div class="fchip">🍜 Food</div>
+        <div class="fchip">🏨 Hotel</div>
+        <div class="fchip">🧭 Guides</div>
+      </div>
+
+      <!-- Reviews feed -->
+      <div class="feed-scroll">
+
+        <!-- Featured review -->
+        <div class="review-card featured">
+          <div class="rc-top">
+            <div class="rc-avatar av-teal">M</div>
+            <div class="rc-meta">
+              <div class="rc-name">Maria Santos</div>
+              <div class="rc-info">
+                🇵🇭 Filipino · Solo traveler
+                <span class="rc-verified">✓ Verified</span>
+              </div>
+            </div>
+          </div>
+          <div class="rc-rating-row">
+            <div class="stars sm">★★★★★</div>
+            <div class="rc-place-tag">🌿 Rizal Park</div>
+          </div>
+          <div class="rc-text">Absolutely breathtaking experience! The park is massive and so peaceful in the early morning. The monument area is stunning and the whole place feels safe and welcoming for solo travelers. Highly recommend visiting before 8AM to beat the crowd!</div>
+          <div class="rc-photos">
+            <div class="rc-photo rp-nature">🌿</div>
+            <div class="rc-photo rp-nature">🌅</div>
+            <div class="rc-photo rp-culture">🗿</div>
+            <div class="rp-more">+3</div>
+          </div>
+          <div class="rc-bottom">
+            <button class="rc-helpful-btn liked">👍 Helpful (24)</button>
+            <div class="rc-time">2 hours ago</div>
+          </div>
+        </div>
+
+        <div class="review-card">
+          <div class="rc-top">
+            <div class="rc-avatar av-amber">J</div>
+            <div class="rc-meta">
+              <div class="rc-name">James Reyes</div>
+              <div class="rc-info">🇺🇸 American · Backpacker</div>
+            </div>
+          </div>
+          <div class="rc-rating-row">
+            <div class="stars sm">★★★★☆</div>
+            <div class="rc-place-tag">🏛️ National Museum</div>
+          </div>
+          <div class="rc-text">World-class museum and it's completely FREE. The artworks inside are incredible — especially the Spoliarium. Definitely allocate at least 3 hours. The app's offline map made it so easy to find even without data!</div>
+          <div class="rc-photos">
+            <div class="rc-photo rp-culture">🏛️</div>
+            <div class="rc-photo rp-culture">🎨</div>
+          </div>
+          <div class="rc-bottom">
+            <button class="rc-helpful-btn">👍 Helpful (11)</button>
+            <div class="rc-time">Yesterday</div>
+          </div>
+        </div>
+
+        <div class="review-card">
+          <div class="rc-top">
+            <div class="rc-avatar av-violet">A</div>
+            <div class="rc-meta">
+              <div class="rc-name">Aisha Tan</div>
+              <div class="rc-info">🇸🇬 Singaporean · Food lover
+                <span class="rc-verified">✓ Verified</span>
+              </div>
+            </div>
+          </div>
+          <div class="rc-rating-row">
+            <div class="stars sm">★★★★★</div>
+            <div class="rc-place-tag">🍜 Binondo Food Walk</div>
+          </div>
+          <div class="rc-text">Best food experience of my life! The siopao and hopia here are unreal. Our local guide Carlo was amazing — so knowledgeable about the history of each stall. Book him via the app, worth every peso!</div>
+          <div class="rc-bottom">
+            <button class="rc-helpful-btn">👍 Helpful (8)</button>
+            <div class="rc-time">3 days ago</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FAB -->
+      <div class="write-fab">✍️ Write a Review</div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item active"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">① Reviews Feed</div>
+</div>
+
+<!-- ══════════════════ PHONE B: WRITE A REVIEW ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="write-screen">
+
+      <div class="write-header">
+        <div class="orb-gold og1"></div>
+        <div class="write-hdr-inner">
+          <div class="write-back">←</div>
+          <div class="write-title">Share Your Experience</div>
+          <div class="write-sub">Help fellow travelers discover great spots</div>
+        </div>
+      </div>
+
+      <div class="write-scroll">
+
+        <!-- Place selector -->
+        <div class="place-selector">
+          <div class="ps-thumb">🌿</div>
+          <div class="ps-info">
+            <div class="ps-name">Rizal Park</div>
+            <div class="ps-loc">📍 Ermita, Manila</div>
+          </div>
+          <div class="ps-change">Change ›</div>
+        </div>
+
+        <!-- Overall star rating -->
+        <div class="field-label">Overall Rating</div>
+        <div class="star-picker">
+          <div class="sp-stars">★★★★★</div>
+          <div class="sp-label">Excellent!</div>
+          <div class="sp-sub">Tap a star to change your rating</div>
+        </div>
+
+        <!-- Aspect ratings -->
+        <div class="field-label" style="margin-top:0;">Rate Specific Aspects</div>
+        <div class="aspects-grid">
+          <div class="aspect-item">
+            <div class="aspect-label">Cleanliness</div>
+            <div class="aspect-stars">★★★★★</div>
+          </div>
+          <div class="aspect-item">
+            <div class="aspect-label">Accessibility</div>
+            <div class="aspect-stars">★★★★☆</div>
+          </div>
+          <div class="aspect-item">
+            <div class="aspect-label">Value</div>
+            <div class="aspect-stars">★★★★★</div>
+          </div>
+          <div class="aspect-item">
+            <div class="aspect-label">Safety</div>
+            <div class="aspect-stars">★★★★★</div>
+          </div>
+        </div>
+
+        <!-- Review text -->
+        <div class="field-label" style="margin-top:4px;">Your Review</div>
+        <div class="review-textarea">
+          <div class="rta-placeholder">Tell others what made this place special — what to do, what to bring, best time to visit…<div class="rta-cursor"></div></div>
+          <div class="rta-counter">0 / 500</div>
+        </div>
+
+        <!-- Photo upload -->
+        <div class="field-label">Add Photos</div>
+        <div class="photo-upload">
+          <div class="photo-filled rp-nature">
+            🌿
+            <div class="photo-remove">✕</div>
+          </div>
+          <div class="photo-filled rp-culture">
+            🗿
+            <div class="photo-remove">✕</div>
+          </div>
+          <div class="photo-slot">
+            <div>📷</div>
+            <div class="photo-slot-label">Add Photo</div>
+          </div>
+          <div class="photo-slot">
+            <div>+</div>
+            <div class="photo-slot-label">More</div>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button class="submit-btn">⭐ Publish My Review</button>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item active"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">② Write a Review</div>
+</div>
+
+<!-- ══════════════════ PHONE C: GUIDE PROFILE ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="guide-screen">
+
+      <!-- Hero -->
+      <div class="guide-hero">
+        <div class="orb-gold og1"></div>
+        <div class="guide-back">←</div>
+        <div class="guide-profile-row">
+          <div class="guide-avatar-wrap">
+            <div class="guide-avatar">👨</div>
+            <div class="guide-verified-badge">✓</div>
+          </div>
+          <div class="guide-info">
+            <div class="guide-name">Carlo Mendoza</div>
+            <div class="guide-title-text">🧭 Verified Local Tour Guide · Manila</div>
+            <div class="guide-tags">
+              <div class="guide-tag">🍜 Food Tours</div>
+              <div class="guide-tag">🏛️ History</div>
+              <div class="guide-tag">🌿 Nature</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="guide-stats">
+        <div class="gs-item">
+          <div class="gs-val">4.9</div>
+          <div class="gs-label">Rating</div>
+        </div>
+        <div class="gs-item">
+          <div class="gs-val">312</div>
+          <div class="gs-label">Reviews</div>
+        </div>
+        <div class="gs-item">
+          <div class="gs-val">847</div>
+          <div class="gs-label">Tours Done</div>
+        </div>
+        <div class="gs-item">
+          <div class="gs-val">5yr</div>
+          <div class="gs-label">Experience</div>
+        </div>
+      </div>
+
+      <!-- Rating breakdown -->
+      <div class="rating-breakdown">
+        <div class="rb-header">
+          <div class="rb-big">4.9</div>
+          <div class="rb-right">
+            <div class="rb-stars">★★★★★</div>
+            <div class="rb-count">Based on 312 reviews</div>
+          </div>
+        </div>
+        <div class="rb-bar-row"><div class="rb-bar-label">5</div><div class="rb-bar-track"><div class="rb-bar-fill" style="width:88%"></div></div><div class="rb-bar-pct">88%</div></div>
+        <div class="rb-bar-row"><div class="rb-bar-label">4</div><div class="rb-bar-track"><div class="rb-bar-fill" style="width:9%"></div></div><div class="rb-bar-pct">9%</div></div>
+        <div class="rb-bar-row"><div class="rb-bar-label">3</div><div class="rb-bar-track"><div class="rb-bar-fill" style="width:2%"></div></div><div class="rb-bar-pct">2%</div></div>
+        <div class="rb-bar-row"><div class="rb-bar-label">2</div><div class="rb-bar-track"><div class="rb-bar-fill" style="width:1%"></div></div><div class="rb-bar-pct">1%</div></div>
+        <div class="rb-bar-row"><div class="rb-bar-label">1</div><div class="rb-bar-track"><div class="rb-bar-fill" style="width:0%"></div></div><div class="rb-bar-pct">0%</div></div>
+      </div>
+
+      <!-- Recent reviews -->
+      <div class="guide-scroll">
+        <div class="sec-title" style="margin-top:16px;">Recent Reviews</div>
+
+        <div class="guide-review-card">
+          <div class="grc-top">
+            <div class="grc-avatar av-violet">A</div>
+            <div style="flex:1">
+              <div class="grc-name">Aisha Tan</div>
+              <div class="grc-date">3 days ago · Binondo Food Walk</div>
+            </div>
+            <div class="grc-stars">★★★★★</div>
+          </div>
+          <div class="grc-text">Carlo is an absolute gem! His knowledge of Binondo's history is incredible. He brought us to hidden food spots no tourist would ever find alone. 100% recommend!</div>
+        </div>
+
+        <div class="guide-review-card">
+          <div class="grc-top">
+            <div class="grc-avatar av-teal">M</div>
+            <div style="flex:1">
+              <div class="grc-name">Maria Santos</div>
+              <div class="grc-date">1 week ago · Intramuros Walk</div>
+            </div>
+            <div class="grc-stars">★★★★★</div>
+          </div>
+          <div class="grc-text">Best tour guide in Manila, hands down. Very punctual, funny, and explains history in a way that makes it come alive. Will definitely book again!</div>
+        </div>
+
+        <div class="guide-review-card">
+          <div class="grc-top">
+            <div class="grc-avatar av-amber">J</div>
+            <div style="flex:1">
+              <div class="grc-name">James Reyes</div>
+              <div class="grc-date">2 weeks ago · Rizal Park Tour</div>
+            </div>
+            <div class="grc-stars">★★★★☆</div>
+          </div>
+          <div class="grc-text">Great guide with deep knowledge of Manila's history. Tour was slightly longer than expected but we learned so much. Would recommend for first-timers.</div>
+        </div>
+      </div>
+
+      <!-- Book CTA -->
+      <div class="guide-cta">
+        <button class="gcta-btn gcta-secondary">💬 Message</button>
+        <button class="gcta-btn gcta-primary">📅 Book This Guide</button>
+      </div>
+
+    </div>
+  </div>
+  <div class="phone-label">③ Guide Profile</div>
+</div>
+
+</body>
+</html>

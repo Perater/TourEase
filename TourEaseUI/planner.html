@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TourEase – Trip Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:   #0A9B8C;
+    --teal-d: #077A6D;
+    --amber:  #F59E0B;
+    --cream:  #FDF8F0;
+    --ink:    #1A2332;
+    --muted:  #6B7A8D;
+    --white:  #FFFFFF;
+    --border: rgba(0,0,0,.07);
+    --success:#16A34A;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #dde2e0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    flex-wrap: wrap;
+    padding: 48px 24px;
+    min-height: 100vh;
+  }
+
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .phone-label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: #445; }
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 48px; overflow: hidden; position: relative;
+    box-shadow: 0 40px 100px rgba(0,0,0,.28), 0 0 0 10px #1A2332;
+    flex-shrink: 0; background: var(--cream);
+  }
+
+  /* ── Shared bottom nav ── */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--white); border-top: 1px solid var(--border);
+    display: flex; padding: 12px 0 24px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,.06); z-index: 30;
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .nav-item.active .nav-label { color: var(--teal); font-weight: 700; }
+
+  /* ══════════════════════════════════════
+     SCREEN A — TRIP SETUP / WIZARD
+  ══════════════════════════════════════ */
+  .setup-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream);
+    overflow: hidden;
+  }
+
+  .setup-header {
+    background: var(--ink);
+    padding: 52px 20px 32px;
+    position: relative; overflow: hidden;
+  }
+  .setup-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .hdr-blob {
+    position: absolute; width: 220px; height: 220px; border-radius: 50%;
+    background: rgba(10,155,140,.12); right: -60px; top: -60px;
+  }
+  .hdr-blob2 {
+    position: absolute; width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(245,158,11,.1); left: 20px; bottom: 20px;
+  }
+  .setup-hdr-inner { position: relative; z-index: 1; }
+  .setup-back { font-size: 20px; color: rgba(255,255,255,.5); margin-bottom: 12px; cursor: pointer; }
+  .setup-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--white); }
+  .setup-sub { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+  /* Progress bar */
+  .progress-bar {
+    display: flex; gap: 6px; margin-top: 20px;
+  }
+  .prog-seg {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,.15);
+  }
+  .prog-seg.done { background: var(--teal); }
+  .prog-seg.active { background: rgba(255,255,255,.6); }
+
+  .setup-body { flex: 1; overflow-y: auto; padding: 28px 20px 110px; }
+  .setup-body::-webkit-scrollbar { display: none; }
+
+  .field-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px; margin-top: 22px;
+  }
+  .field-label:first-child { margin-top: 0; }
+
+  /* Destination input */
+  .dest-input {
+    background: var(--white); border-radius: 16px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+    border: 2px solid var(--teal);
+    box-shadow: 0 0 0 4px rgba(10,155,140,.08);
+  }
+  .dest-input span { font-size: 20px; }
+  .dest-input p { font-size: 15px; font-weight: 600; color: var(--ink); }
+
+  /* Date range */
+  .date-row { display: flex; gap: 10px; }
+  .date-box {
+    flex: 1; background: var(--white); border-radius: 14px;
+    padding: 14px; border: 1.5px solid var(--border);
+    text-align: center;
+  }
+  .date-box-label { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 4px; }
+  .date-box-val { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .date-box-sub { font-size: 11px; color: var(--teal); margin-top: 2px; }
+  .date-arrow { display: flex; align-items: center; font-size: 18px; color: var(--muted); padding-top: 10px; }
+
+  /* Budget slider visual */
+  .budget-track {
+    background: var(--white); border-radius: 14px; padding: 16px;
+    border: 1.5px solid var(--border);
+  }
+  .budget-labels { display: flex; justify-content: space-between; margin-bottom: 12px; }
+  .budget-val { font-size: 22px; font-weight: 700; color: var(--ink); }
+  .budget-curr { font-size: 12px; color: var(--muted); }
+  .slider-track {
+    width: 100%; height: 6px; border-radius: 3px;
+    background: #E5E7EB; position: relative;
+  }
+  .slider-fill {
+    position: absolute; left: 0; top: 0; height: 100%;
+    width: 62%; border-radius: 3px; background: var(--teal);
+  }
+  .slider-thumb {
+    position: absolute; left: 62%; top: 50%; transform: translate(-50%,-50%);
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--white); border: 3px solid var(--teal);
+    box-shadow: 0 2px 8px rgba(10,155,140,.3);
+  }
+  .budget-hint { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; }
+
+  /* Interest chips */
+  .interests-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .interest-chip {
+    padding: 9px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 2px solid var(--border);
+    background: var(--white); color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+    transition: all .15s;
+  }
+  .interest-chip.sel {
+    background: var(--ink); color: var(--white); border-color: var(--ink);
+  }
+  .interest-chip.sel2 {
+    background: var(--teal); color: var(--white); border-color: var(--teal);
+  }
+
+  /* Travelers */
+  .traveler-row { display: flex; gap: 10px; }
+  .traveler-box {
+    flex: 1; background: var(--white); border-radius: 14px;
+    padding: 12px; border: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+  }
+  .traveler-box.sel { border-color: var(--teal); background: rgba(10,155,140,.04); }
+  .traveler-icon { font-size: 24px; }
+  .traveler-text { }
+  .traveler-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .traveler-sub { font-size: 11px; color: var(--muted); }
+
+  /* Generate button */
+  .gen-btn-wrap {
+    position: absolute; bottom: 78px; left: 20px; right: 20px; z-index: 10;
+  }
+  .gen-btn {
+    width: 100%; padding: 18px; border-radius: 18px; border: none;
+    background: linear-gradient(135deg, var(--teal), #04C5B2);
+    color: var(--white); font-family: 'DM Sans', sans-serif;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 12px 32px rgba(10,155,140,.4);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    letter-spacing: .3px;
+  }
+
+  /* ══════════════════════════════════════
+     SCREEN B — GENERATED ITINERARY
+  ══════════════════════════════════════ */
+  .itin-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+  .itin-header {
+    background: var(--ink);
+    padding: 52px 20px 28px;
+    position: relative; overflow: hidden;
+  }
+  .itin-header::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .itin-hdr-inner { position: relative; z-index: 1; }
+  .itin-trip-name { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--white); margin-bottom: 6px; }
+  .itin-meta { display: flex; gap: 14px; align-items: center; }
+  .itin-meta-item { font-size: 12px; color: rgba(255,255,255,.5); display: flex; align-items: center; gap: 4px; }
+
+  /* Summary strip */
+  .itin-summary {
+    display: flex; gap: 0;
+    background: var(--white); border-radius: 18px; margin: 24px 20px 0;
+    border: 1px solid var(--border); overflow: hidden;
+  }
+  .sum-item {
+    flex: 1; padding: 14px 10px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .sum-item:last-child { border-right: none; }
+  .sum-val { font-size: 18px; font-weight: 800; color: var(--ink); }
+  .sum-lab { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin-top: 2px; }
+
+  .itin-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 110px; }
+  .itin-scroll::-webkit-scrollbar { display: none; }
+
+  /* Day header */
+  .day-group { margin-bottom: 24px; }
+  .day-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  }
+  .day-badge {
+    background: var(--ink); color: var(--white);
+    border-radius: 10px; padding: 6px 12px;
+    font-size: 12px; font-weight: 700; letter-spacing: .5px;
+    white-space: nowrap;
+  }
+  .day-line { flex: 1; height: 1px; background: var(--border); }
+  .day-date { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+  /* Timeline items */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 10px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .tl-item {
+    position: relative; margin-bottom: 12px;
+  }
+  .tl-dot {
+    position: absolute; left: -23px; top: 14px;
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--white);
+    box-shadow: 0 0 0 2px var(--border);
+    background: var(--white);
+    z-index: 1;
+  }
+  .tl-dot.done   { background: var(--success); box-shadow: 0 0 0 2px rgba(22,163,74,.3); }
+  .tl-dot.active { background: var(--teal);   box-shadow: 0 0 0 3px rgba(10,155,140,.25); }
+  .tl-dot.pending{ background: var(--white); }
+
+  .tl-card {
+    background: var(--white); border-radius: 16px; padding: 14px;
+    border: 1px solid var(--border);
+    display: flex; gap: 12px; align-items: flex-start;
+    transition: transform .15s; cursor: pointer;
+  }
+  .tl-card:hover { transform: translateX(3px); }
+  .tl-card.active-card { border-color: var(--teal); box-shadow: 0 4px 16px rgba(10,155,140,.12); }
+
+  .tl-thumb {
+    width: 52px; height: 52px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; flex-shrink: 0;
+  }
+  .tl-thumb.nature    { background: linear-gradient(135deg,#A8D8A8,#68B684); }
+  .tl-thumb.culture   { background: linear-gradient(135deg,#F9C784,#F0A446); }
+  .tl-thumb.food      { background: linear-gradient(135deg,#FFB3A7,#E87B6A); }
+  .tl-thumb.transport { background: linear-gradient(135deg,#C4C9FF,#8B92E8); }
+  .tl-thumb.hotel     { background: linear-gradient(135deg,#D4B896,#B8957A); }
+
+  .tl-info { flex: 1; }
+  .tl-time { font-size: 11px; color: var(--teal); font-weight: 700; margin-bottom: 3px; }
+  .tl-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .tl-meta { font-size: 12px; color: var(--muted); }
+
+  .tl-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .tl-cost { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .tl-dur  { font-size: 11px; color: var(--muted); }
+
+  /* Budget ring */
+  .budget-ring-wrap {
+    background: var(--white); border-radius: 18px;
+    padding: 16px 20px; margin-bottom: 16px;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+  }
+  .ring-svg { width: 64px; height: 64px; flex-shrink: 0; }
+  .ring-info { }
+  .ring-title { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .ring-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .ring-bar   { display: flex; gap: 8px; margin-top: 8px; }
+  .ring-leg   { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+  .ring-dot   { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ══════════════════════════════════════
+     SCREEN C — DAY DETAIL VIEW
+  ══════════════════════════════════════ */
+  .day-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream); overflow: hidden;
+  }
+  .day-hdr {
+    background: var(--ink); padding: 52px 20px 26px;
+    position: relative; overflow: hidden;
+  }
+  .day-hdr::after {
+    content:''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .day-hdr-blob {
+    position: absolute; width: 180px; height: 180px; border-radius: 50%;
+    background: rgba(245,158,11,.1); right: -40px; top: -40px;
+  }
+  .day-hdr-inner { position: relative; z-index: 1; }
+  .day-hdr-back { font-size: 20px; color: rgba(255,255,255,.5); margin-bottom: 10px; cursor: pointer; }
+  .day-hdr-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--white); }
+  .day-hdr-sub { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+  /* Weather + mood strip */
+  .day-strip {
+    display: flex; gap: 10px; padding: 22px 20px 0; flex-shrink: 0;
+  }
+  .strip-card {
+    flex: 1; background: var(--white); border-radius: 14px;
+    padding: 12px; border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .strip-icon { font-size: 22px; }
+  .strip-info { }
+  .strip-val { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .strip-lab { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+
+  .day-scroll { flex: 1; overflow-y: auto; padding: 16px 20px 110px; }
+  .day-scroll::-webkit-scrollbar { display: none; }
+
+  /* Expanded activity card */
+  .activity-card {
+    background: var(--white); border-radius: 20px;
+    margin-bottom: 14px; overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .activity-card.expanded { border-color: var(--teal); box-shadow: 0 8px 24px rgba(10,155,140,.1); }
+
+  .act-top {
+    display: flex; gap: 12px; padding: 14px; align-items: flex-start;
+  }
+  .act-thumb {
+    width: 60px; height: 60px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; flex-shrink: 0;
+  }
+  .act-main { flex: 1; }
+  .act-time { font-size: 11px; color: var(--teal); font-weight: 700; margin-bottom: 3px; }
+  .act-name { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .act-loc  { font-size: 12px; color: var(--muted); }
+  .act-chevron { font-size: 18px; color: var(--muted); padding-top: 4px; transition: transform .3s; }
+  .activity-card.expanded .act-chevron { transform: rotate(90deg); }
+
+  /* Expanded details */
+  .act-detail {
+    display: none; padding: 0 14px 14px; border-top: 1px solid var(--border);
+  }
+  .activity-card.expanded .act-detail { display: block; }
+
+  .act-detail-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; padding-top: 14px;
+  }
+  .act-d-item {
+    background: var(--cream); border-radius: 10px; padding: 10px;
+  }
+  .act-d-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  .act-d-val   { font-size: 13px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+
+  .act-notes {
+    font-size: 13px; color: #3D4A58; line-height: 1.6;
+    background: rgba(10,155,140,.04); border-radius: 10px;
+    padding: 10px 12px; border-left: 3px solid var(--teal);
+    margin-bottom: 12px;
+  }
+
+  .act-actions { display: flex; gap: 8px; }
+  .act-btn {
+    flex: 1; padding: 10px; border-radius: 12px; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .act-btn-map { background: var(--cream); color: var(--ink); border: 1.5px solid var(--border); }
+  .act-btn-done { background: var(--teal); color: var(--white); }
+
+  /* Transport connector */
+  .transport-connector {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; margin-bottom: 6px;
+  }
+  .conn-line { flex: 1; height: 1px; border-top: 2px dashed rgba(10,155,140,.25); }
+  .conn-pill {
+    background: rgba(10,155,140,.08); border-radius: 20px;
+    padding: 4px 10px; display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--teal); font-weight: 600; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ PHONE A: TRIP SETUP ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="setup-screen">
+      <div class="setup-header">
+        <div class="hdr-blob"></div>
+        <div class="hdr-blob2"></div>
+        <div class="setup-hdr-inner">
+          <div class="setup-back">←</div>
+          <div class="setup-title">Plan Your Trip</div>
+          <div class="setup-sub">Tell us your preferences</div>
+          <div class="progress-bar">
+            <div class="prog-seg done"></div>
+            <div class="prog-seg done"></div>
+            <div class="prog-seg active"></div>
+            <div class="prog-seg"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-body">
+
+        <!-- Destination -->
+        <div class="field-label">Destination</div>
+        <div class="dest-input">
+          <span>📍</span>
+          <p>Manila, Philippines</p>
+        </div>
+
+        <!-- Dates -->
+        <div class="field-label">Travel Dates</div>
+        <div class="date-row">
+          <div class="date-box">
+            <div class="date-box-label">Check In</div>
+            <div class="date-box-val">Mar 15</div>
+            <div class="date-box-sub">Saturday</div>
+          </div>
+          <div class="date-arrow">→</div>
+          <div class="date-box">
+            <div class="date-box-label">Check Out</div>
+            <div class="date-box-val">Mar 19</div>
+            <div class="date-box-sub">Wednesday</div>
+          </div>
+        </div>
+
+        <!-- Budget -->
+        <div class="field-label">Daily Budget</div>
+        <div class="budget-track">
+          <div class="budget-labels">
+            <div>
+              <div class="budget-val">₱2,500</div>
+              <div class="budget-curr">per day · per person</div>
+            </div>
+            <div style="text-align:right">
+              <div class="budget-val" style="color:var(--teal)">Mid-range</div>
+              <div class="budget-curr">budget level</div>
+            </div>
+          </div>
+          <div class="slider-track">
+            <div class="slider-fill"></div>
+            <div class="slider-thumb"></div>
+          </div>
+          <div class="budget-hint">💡 Covers transport, food & 1 attraction/day</div>
+        </div>
+
+        <!-- Interests -->
+        <div class="field-label">Your Interests</div>
+        <div class="interests-grid">
+          <div class="interest-chip sel2">🏖️ Beach</div>
+          <div class="interest-chip sel">🏛️ History</div>
+          <div class="interest-chip sel2">🍜 Food</div>
+          <div class="interest-chip">📸 Photography</div>
+          <div class="interest-chip sel">🌿 Nature</div>
+          <div class="interest-chip">🎭 Culture</div>
+          <div class="interest-chip">🏕️ Adventure</div>
+          <div class="interest-chip">🛍️ Shopping</div>
+        </div>
+
+        <!-- Traveler type -->
+        <div class="field-label">Traveling As</div>
+        <div class="traveler-row">
+          <div class="traveler-box sel">
+            <div class="traveler-icon">🧑</div>
+            <div class="traveler-text">
+              <div class="traveler-name">Solo</div>
+              <div class="traveler-sub">Just me</div>
+            </div>
+          </div>
+          <div class="traveler-box">
+            <div class="traveler-icon">👫</div>
+            <div class="traveler-text">
+              <div class="traveler-name">Couple</div>
+              <div class="traveler-sub">2 people</div>
+            </div>
+          </div>
+          <div class="traveler-box">
+            <div class="traveler-icon">👨‍👩‍👧</div>
+            <div class="traveler-text">
+              <div class="traveler-name">Family</div>
+              <div class="traveler-sub">3+ people</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Generate button -->
+      <div class="gen-btn-wrap">
+        <button class="gen-btn">✨ Generate My Itinerary</button>
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item active"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">① Trip Setup</div>
+</div>
+
+<!-- ══════════════════ PHONE B: ITINERARY OVERVIEW ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="itin-screen">
+      <div class="itin-header">
+        <div class="hdr-blob"></div>
+        <div class="itin-hdr-inner">
+          <div class="itin-trip-name">Manila Adventure 🌴</div>
+          <div class="itin-meta">
+            <div class="itin-meta-item">📅 Mar 15–19</div>
+            <div class="itin-meta-item">·</div>
+            <div class="itin-meta-item">4 Nights</div>
+            <div class="itin-meta-item">·</div>
+            <div class="itin-meta-item">🧑 Solo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary strip -->
+      <div class="itin-summary">
+        <div class="sum-item">
+          <div class="sum-val">5</div>
+          <div class="sum-lab">Days</div>
+        </div>
+        <div class="sum-item">
+          <div class="sum-val">14</div>
+          <div class="sum-lab">Activities</div>
+        </div>
+        <div class="sum-item">
+          <div class="sum-val" style="color:var(--teal)">₱12k</div>
+          <div class="sum-lab">Budget</div>
+        </div>
+        <div class="sum-item">
+          <div class="sum-val">✓</div>
+          <div class="sum-lab">Offline</div>
+        </div>
+      </div>
+
+      <div class="itin-scroll">
+
+        <!-- Budget ring -->
+        <div class="budget-ring-wrap" style="margin-top:18px;">
+          <svg class="ring-svg" viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="#E5E7EB" stroke-width="8"/>
+            <circle cx="32" cy="32" r="26" fill="none" stroke="#0A9B8C" stroke-width="8"
+              stroke-dasharray="100 63" stroke-linecap="round" transform="rotate(-90 32 32)"/>
+            <text x="32" y="37" text-anchor="middle" font-size="12" font-weight="800" fill="#1A2332">61%</text>
+          </svg>
+          <div class="ring-info">
+            <div class="ring-title">Budget Used: ₱7,340</div>
+            <div class="ring-sub">₱4,660 remaining of ₱12,000</div>
+            <div class="ring-bar">
+              <div class="ring-leg"><div class="ring-dot" style="background:var(--teal)"></div>Transport</div>
+              <div class="ring-leg"><div class="ring-dot" style="background:var(--amber)"></div>Food</div>
+              <div class="ring-leg"><div class="ring-dot" style="background:#8B92E8"></div>Entry</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day 1 -->
+        <div class="day-group">
+          <div class="day-header">
+            <div class="day-badge">DAY 1</div>
+            <div class="day-line"></div>
+            <div class="day-date">Mar 15 · Sat</div>
+          </div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-dot done"></div>
+              <div class="tl-card">
+                <div class="tl-thumb nature">🌿</div>
+                <div class="tl-info">
+                  <div class="tl-time">8:00 AM</div>
+                  <div class="tl-name">Rizal Park</div>
+                  <div class="tl-meta">Ermita · 1.5 hrs · Free</div>
+                </div>
+                <div class="tl-right">
+                  <div class="tl-cost">₱0</div>
+                  <div class="tl-dur">✓ Done</div>
+                </div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot active"></div>
+              <div class="tl-card active-card">
+                <div class="tl-thumb culture">🏛️</div>
+                <div class="tl-info">
+                  <div class="tl-time">10:00 AM · Now</div>
+                  <div class="tl-name">National Museum</div>
+                  <div class="tl-meta">Padre Burgos · 2 hrs · Free</div>
+                </div>
+                <div class="tl-right">
+                  <div class="tl-cost">₱0</div>
+                  <div class="tl-dur">⏱ Active</div>
+                </div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot pending"></div>
+              <div class="tl-card">
+                <div class="tl-thumb food">🍜</div>
+                <div class="tl-info">
+                  <div class="tl-time">1:00 PM</div>
+                  <div class="tl-name">Binondo Food Walk</div>
+                  <div class="tl-meta">Chinatown · 2 hrs</div>
+                </div>
+                <div class="tl-right">
+                  <div class="tl-cost">₱400</div>
+                  <div class="tl-dur">Upcoming</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day 2 -->
+        <div class="day-group">
+          <div class="day-header">
+            <div class="day-badge">DAY 2</div>
+            <div class="day-line"></div>
+            <div class="day-date">Mar 16 · Sun</div>
+          </div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-dot pending"></div>
+              <div class="tl-card">
+                <div class="tl-thumb culture">🎭</div>
+                <div class="tl-info">
+                  <div class="tl-time">9:00 AM</div>
+                  <div class="tl-name">Intramuros Walking Tour</div>
+                  <div class="tl-meta">Intramuros · 3 hrs</div>
+                </div>
+                <div class="tl-right">
+                  <div class="tl-cost">₱200</div>
+                  <div class="tl-dur">2.5 hrs</div>
+                </div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot pending"></div>
+              <div class="tl-card">
+                <div class="tl-thumb hotel">🏨</div>
+                <div class="tl-info">
+                  <div class="tl-time">6:00 PM</div>
+                  <div class="tl-name">Check-in: Casa Luneta</div>
+                  <div class="tl-meta">Ermita · Homestay</div>
+                </div>
+                <div class="tl-right">
+                  <div class="tl-cost">₱900</div>
+                  <div class="tl-dur">/night</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item active"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">② Itinerary Overview</div>
+</div>
+
+<!-- ══════════════════ PHONE C: DAY DETAIL ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="day-screen">
+      <div class="day-hdr">
+        <div class="day-hdr-blob"></div>
+        <div class="day-hdr-inner">
+          <div class="day-hdr-back">←</div>
+          <div class="day-hdr-title">Day 1 · March 15</div>
+          <div class="day-hdr-sub">Manila Adventure · 3 Activities</div>
+        </div>
+      </div>
+
+      <!-- Weather + budget strip -->
+      <div class="day-strip">
+        <div class="strip-card">
+          <div class="strip-icon">⛅</div>
+          <div class="strip-info">
+            <div class="strip-val">28°C</div>
+            <div class="strip-lab">Weather</div>
+          </div>
+        </div>
+        <div class="strip-card">
+          <div class="strip-icon">💰</div>
+          <div class="strip-info">
+            <div class="strip-val">₱2,500</div>
+            <div class="strip-lab">Day Budget</div>
+          </div>
+        </div>
+        <div class="strip-card">
+          <div class="strip-icon">⏱️</div>
+          <div class="strip-info">
+            <div class="strip-val">7.5 hrs</div>
+            <div class="strip-lab">Total Time</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="day-scroll">
+        <div style="margin-top: 16px;"></div>
+
+        <!-- Activity 1 — expanded -->
+        <div class="activity-card expanded">
+          <div class="act-top">
+            <div class="act-thumb nature">🌿</div>
+            <div class="act-main">
+              <div class="act-time">8:00 AM · 1.5 hrs</div>
+              <div class="act-name">Rizal Park</div>
+              <div class="act-loc">📍 Ermita, Manila</div>
+            </div>
+            <div class="act-chevron">›</div>
+          </div>
+          <div class="act-detail">
+            <div class="act-detail-grid">
+              <div class="act-d-item">
+                <div class="act-d-label">Entry Fee</div>
+                <div class="act-d-val">Free 🎉</div>
+              </div>
+              <div class="act-d-item">
+                <div class="act-d-label">Best Time</div>
+                <div class="act-d-val">Early Morning</div>
+              </div>
+              <div class="act-d-item">
+                <div class="act-d-label">Category</div>
+                <div class="act-d-val">🌿 Nature</div>
+              </div>
+              <div class="act-d-item">
+                <div class="act-d-label">Offline Map</div>
+                <div class="act-d-val" style="color:var(--success)">✓ Ready</div>
+              </div>
+            </div>
+            <div class="act-notes">
+              💡 Tip: Visit the Rizal Monument early morning before crowds arrive. The fountain area is great for photos!
+            </div>
+            <div class="act-actions">
+              <button class="act-btn act-btn-map">🗺️ Navigate</button>
+              <button class="act-btn act-btn-done">✓ Mark Done</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transport connector -->
+        <div class="transport-connector">
+          <div class="conn-line"></div>
+          <div class="conn-pill">🚶 Walk · 15 min · 0.9 km</div>
+          <div class="conn-line"></div>
+        </div>
+
+        <!-- Activity 2 -->
+        <div class="activity-card">
+          <div class="act-top">
+            <div class="act-thumb culture">🏛️</div>
+            <div class="act-main">
+              <div class="act-time">10:00 AM · 2 hrs</div>
+              <div class="act-name">National Museum of History</div>
+              <div class="act-loc">📍 Padre Burgos Ave, Manila</div>
+            </div>
+            <div class="act-chevron">›</div>
+          </div>
+        </div>
+
+        <!-- Transport connector -->
+        <div class="transport-connector">
+          <div class="conn-line"></div>
+          <div class="conn-pill">🚕 Taxi · 12 min · ₱120</div>
+          <div class="conn-line"></div>
+        </div>
+
+        <!-- Activity 3 -->
+        <div class="activity-card">
+          <div class="act-top">
+            <div class="act-thumb food">🍜</div>
+            <div class="act-main">
+              <div class="act-time">1:00 PM · 2 hrs</div>
+              <div class="act-name">Binondo Food Walk</div>
+              <div class="act-loc">📍 Chinatown, Manila</div>
+            </div>
+            <div class="act-chevron">›</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item active"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">③ Day Detail</div>
+</div>
+
+</body>
+</html>

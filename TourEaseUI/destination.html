@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TourEase – Smart Destination Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:   #0A9B8C;
+    --teal-d: #077A6D;
+    --amber:  #F59E0B;
+    --cream:  #FDF8F0;
+    --ink:    #1A2332;
+    --muted:  #6B7A8D;
+    --white:  #FFFFFF;
+    --card:   #FFFFFF;
+    --border: rgba(0,0,0,.07);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #dde4e0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px;
+    flex-wrap: wrap;
+    padding: 48px 24px;
+    min-height: 100vh;
+  }
+
+  .phone-wrap {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 16px;
+  }
+  .phone-label {
+    font-size: 12px; letter-spacing: 2px;
+    text-transform: uppercase; font-weight: 700; color: #445;
+  }
+  .phone {
+    width: 375px; height: 812px;
+    border-radius: 48px; overflow: hidden;
+    position: relative;
+    box-shadow: 0 40px 100px rgba(0,0,0,.28), 0 0 0 10px #1A2332;
+    flex-shrink: 0;
+    background: var(--cream);
+  }
+
+  /* ══════════════════════════════════════
+     SCREEN A — MAP VIEW (Main Guide)
+  ══════════════════════════════════════ */
+  .map-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+
+  /* Fake Map Background */
+  .map-bg {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(rgba(168,216,213,.6) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168,216,213,.6) 1px, transparent 1px),
+      linear-gradient(180deg, #C8EBE8 0%, #B8DED9 50%, #A8D0CB 100%);
+    background-size: 40px 40px, 40px 40px, 100% 100%;
+  }
+
+  /* Road shapes */
+  .map-road {
+    position: absolute; background: rgba(255,255,255,.7);
+  }
+  .road-h1 { width: 100%; height: 12px; top: 38%; border-radius: 6px; }
+  .road-h2 { width: 100%; height: 8px;  top: 62%; border-radius: 4px; opacity:.6; }
+  .road-v1 { height: 100%; width: 12px; left: 35%; border-radius: 6px; }
+  .road-v2 { height: 100%; width: 8px;  left: 65%; border-radius: 4px; opacity:.6; }
+
+  /* Green park blobs */
+  .map-park {
+    position: absolute; border-radius: 50%;
+    background: rgba(74,167,105,.25);
+  }
+  .park1 { width: 90px; height: 70px; top: 20%; left: 10%; }
+  .park2 { width: 60px; height: 50px; top: 55%; right: 15%; }
+
+  /* Water body */
+  .map-water {
+    position: absolute; bottom: 28%; right: 0;
+    width: 120px; height: 90px;
+    background: rgba(59,130,246,.2);
+    border-radius: 60px 0 0 60px;
+  }
+
+  /* Map Pins */
+  .pin {
+    position: absolute;
+    display: flex; flex-direction: column; align-items: center;
+    cursor: pointer;
+  }
+  .pin-bubble {
+    background: var(--white);
+    border-radius: 12px; padding: 6px 10px;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    font-size: 12px; font-weight: 600; color: var(--ink);
+    white-space: nowrap;
+  }
+  .pin-bubble.active {
+    background: var(--teal); color: var(--white);
+    box-shadow: 0 8px 24px rgba(10,155,140,.4);
+    transform: scale(1.08);
+  }
+  .pin-tail {
+    width: 2px; height: 8px; background: var(--ink);
+    opacity: .3;
+  }
+  .pin-tail.active { background: var(--teal); opacity: 1; }
+  .pin-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,.2); }
+  .pin-dot.active { background: var(--teal); }
+
+  .pin1 { top: 22%; left: 42%; }
+  .pin2 { top: 44%; left: 18%; }
+  .pin3 { top: 30%; right: 20%; }
+  .pin4 { top: 55%; left: 55%; }
+  .pin5 { top: 18%; left: 22%; }
+
+  /* Top bar overlay */
+  .map-topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+    padding: 48px 16px 16px;
+  }
+  .map-search {
+    background: var(--white);
+    border-radius: 16px; padding: 13px 16px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.12);
+  }
+  .map-search-icon { font-size: 18px; }
+  .map-search-text { flex: 1; font-size: 14px; color: var(--muted); }
+  .map-filter-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  /* Category chips */
+  .map-chips {
+    position: absolute; top: 120px; left: 0; right: 0; z-index: 10;
+    display: flex; gap: 8px;
+    padding: 0 16px;
+    overflow-x: auto;
+  }
+  .map-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    background: var(--white);
+    border-radius: 20px; padding: 7px 14px;
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    display: flex; align-items: center; gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .chip.active { background: var(--teal); color: var(--white); }
+
+  /* Offline badge */
+  .offline-badge {
+    position: absolute; top: 170px; right: 16px; z-index: 10;
+    background: var(--ink); border-radius: 10px;
+    padding: 5px 10px; display: flex; align-items: center; gap: 5px;
+  }
+  .offline-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ADE80; }
+  .offline-text { font-size: 10px; color: rgba(255,255,255,.8); font-weight: 600; letter-spacing: .5px; }
+
+  /* Zoom controls */
+  .map-controls {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    z-index: 10;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .map-ctrl-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: var(--ink);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    cursor: pointer;
+  }
+
+  /* Bottom sheet – place list */
+  .bottom-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: var(--white);
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -8px 40px rgba(0,0,0,.12);
+    padding: 12px 0 0;
+  }
+  .sheet-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: var(--border);
+    margin: 0 auto 16px;
+  }
+  .sheet-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px 14px;
+  }
+  .sheet-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--ink); }
+  .sheet-count { font-size: 13px; color: var(--muted); }
+
+  /* Horizontal scroll card row */
+  .places-row {
+    display: flex; gap: 12px;
+    padding: 0 20px 20px;
+    overflow-x: auto;
+  }
+  .places-row::-webkit-scrollbar { display: none; }
+  .place-card {
+    flex-shrink: 0; width: 180px;
+    border-radius: 18px; overflow: hidden;
+    background: var(--card);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .place-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.1); }
+  .place-card-img {
+    width: 100%; height: 100px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+    position: relative;
+  }
+  .place-card-img.nature  { background: linear-gradient(135deg,#A8D8A8,#68B684); }
+  .place-card-img.culture { background: linear-gradient(135deg,#F9C784,#F0A446); }
+  .place-card-img.food    { background: linear-gradient(135deg,#FFB3A7,#E87B6A); }
+  .place-card-img.adventure{ background: linear-gradient(135deg,#A0C4FF,#6B9FD4); }
+
+  .place-card-badge {
+    position: absolute; top: 8px; left: 8px;
+    background: rgba(255,255,255,.85); backdrop-filter: blur(6px);
+    border-radius: 8px; padding: 3px 8px;
+    font-size: 10px; font-weight: 700; color: var(--ink); letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .place-card-save {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,.85);
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .place-card-body { padding: 12px; }
+  .place-card-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 5px; line-height: 1.3; }
+  .place-card-meta { display: flex; align-items: center; justify-content: space-between; }
+  .place-card-dist { font-size: 11px; color: var(--muted); }
+  .place-card-stars { font-size: 11px; color: var(--amber); font-weight: 600; }
+
+  /* ══════════════════════════════════════
+     SCREEN B — CATEGORY / LIST VIEW
+  ══════════════════════════════════════ */
+  .list-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream);
+  }
+  .list-header {
+    background: var(--ink);
+    padding: 52px 20px 24px;
+    position: relative; overflow: hidden;
+  }
+  .list-header::after {
+    content: ''; position: absolute; bottom: -30px; left: 0; right: 0; height: 50px;
+    background: var(--cream); border-radius: 32px 32px 0 0;
+  }
+  .list-header-inner { position: relative; z-index: 1; }
+  .list-back { font-size: 22px; margin-bottom: 16px; cursor: pointer; color: rgba(255,255,255,.7); }
+  .list-heading { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--white); }
+  .list-sub { font-size: 13px; color: rgba(255,255,255,.45); margin-top: 4px; }
+
+  /* Category tabs */
+  .cat-tabs {
+    display: flex; gap: 8px;
+    padding: 24px 20px 0;
+    overflow-x: auto;
+  }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab {
+    flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 2px solid transparent;
+    background: var(--white); color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .cat-tab.active { background: var(--teal); color: var(--white); border-color: var(--teal); }
+
+  .list-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 100px; }
+  .list-scroll::-webkit-scrollbar { display: none; }
+
+  /* List items */
+  .place-item {
+    display: flex; gap: 14px;
+    background: var(--white); border-radius: 18px;
+    padding: 14px; margin-bottom: 12px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .place-item:hover { transform: translateX(4px); }
+  .item-thumb {
+    width: 76px; height: 76px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; flex-shrink: 0;
+  }
+  .item-thumb.nature   { background: linear-gradient(135deg,#A8D8A8,#68B684); }
+  .item-thumb.culture  { background: linear-gradient(135deg,#F9C784,#F0A446); }
+  .item-thumb.food     { background: linear-gradient(135deg,#FFB3A7,#E87B6A); }
+  .item-thumb.adventure{ background: linear-gradient(135deg,#A0C4FF,#6B9FD4); }
+
+  .item-info { flex: 1; }
+  .item-name { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .item-addr { font-size: 12px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+  .item-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .item-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: .5px;
+    padding: 3px 8px; border-radius: 6px;
+    text-transform: uppercase;
+  }
+  .tag-nature   { background: #DCFCE7; color: #16A34A; }
+  .tag-culture  { background: #FEF3C7; color: #D97706; }
+  .tag-food     { background: #FFE4E6; color: #E11D48; }
+  .tag-adventure{ background: #DBEAFE; color: #2563EB; }
+  .tag-free     { background: #F3F4F6; color: #4B5563; }
+
+  .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .item-rating { font-size: 12px; font-weight: 700; color: var(--amber); }
+  .item-dist { font-size: 11px; color: var(--muted); }
+  .item-offline { font-size: 10px; color: #16A34A; font-weight: 700; }
+
+  /* ══════════════════════════════════════
+     SCREEN C — PLACE DETAIL
+  ══════════════════════════════════════ */
+  .detail-screen {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--cream);
+    overflow: hidden;
+  }
+  .detail-hero {
+    width: 100%; height: 280px;
+    background: linear-gradient(135deg,#A8D8A8,#68B684);
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 80px;
+    flex-shrink: 0;
+  }
+  .detail-hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(26,35,50,.7) 0%, transparent 60%);
+  }
+  .detail-back-btn {
+    position: absolute; top: 52px; left: 16px; z-index: 2;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,.2); backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer;
+  }
+  .detail-save-btn {
+    position: absolute; top: 52px; right: 16px; z-index: 2;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,.2); backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer;
+  }
+  .detail-hero-text {
+    position: absolute; bottom: 16px; left: 20px; right: 20px; z-index: 2;
+  }
+  .detail-hero-cat {
+    display: inline-block;
+    background: var(--teal); color: var(--white);
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 8px; margin-bottom: 8px;
+  }
+  .detail-hero-name {
+    font-family: 'Playfair Display', serif; font-size: 24px;
+    color: var(--white); line-height: 1.2;
+  }
+
+  .detail-body { flex: 1; overflow-y: auto; padding: 20px; }
+  .detail-body::-webkit-scrollbar { display: none; }
+
+  .detail-meta-row {
+    display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .meta-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--white); border-radius: 12px; padding: 8px 12px;
+    border: 1px solid var(--border);
+  }
+  .meta-pill-icon { font-size: 16px; }
+  .meta-pill-text { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .meta-pill-sub  { font-size: 10px; color: var(--muted); }
+
+  .detail-section-title {
+    font-size: 13px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 10px; margin-top: 18px;
+  }
+  .detail-desc {
+    font-size: 14px; line-height: 1.7; color: #3D4A58;
+  }
+
+  /* Mini map preview in detail */
+  .mini-map {
+    width: 100%; height: 100px; border-radius: 16px;
+    background:
+      linear-gradient(rgba(168,216,213,.6) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168,216,213,.6) 1px, transparent 1px),
+      linear-gradient(180deg, #C8EBE8 0%, #A8D0CB 100%);
+    background-size: 24px 24px, 24px 24px, 100% 100%;
+    position: relative; overflow: hidden; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mini-map-pin {
+    font-size: 28px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,.2));
+    animation: pinBounce 1.5s ease-in-out infinite;
+  }
+  @keyframes pinBounce {
+    0%,100%{ transform: translateY(0); }
+    50%{ transform: translateY(-6px); }
+  }
+  .mini-map-label {
+    position: absolute; bottom: 10px; right: 12px;
+    background: var(--white); border-radius: 8px; padding: 4px 8px;
+    font-size: 11px; font-weight: 700; color: var(--teal);
+  }
+
+  /* Facility icons */
+  .facilities-row {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+  }
+  .facility {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: var(--white); border-radius: 14px; padding: 12px;
+    border: 1px solid var(--border); min-width: 60px;
+  }
+  .facility-icon { font-size: 20px; }
+  .facility-label { font-size: 10px; color: var(--muted); text-align: center; font-weight: 600; }
+
+  /* CTA buttons */
+  .detail-cta {
+    display: flex; gap: 10px; padding: 16px 20px 32px;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .cta-btn {
+    flex: 1; padding: 15px; border-radius: 14px;
+    border: none; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .cta-primary { background: var(--teal); color: var(--white); box-shadow: 0 8px 24px rgba(10,155,140,.3); }
+  .cta-secondary { background: var(--cream); color: var(--ink); border: 2px solid var(--border); }
+
+  /* Bottom nav (shared) */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--white); border-top: 1px solid var(--border);
+    display: flex; padding: 12px 0 24px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,.06);
+    z-index: 30;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; cursor: pointer;
+  }
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .nav-item.active .nav-label { color: var(--teal); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ PHONE A: MAP VIEW ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="map-screen">
+
+      <!-- Map background -->
+      <div class="map-bg">
+        <div class="map-road road-h1"></div>
+        <div class="map-road road-h2"></div>
+        <div class="map-road road-v1"></div>
+        <div class="map-road road-v2"></div>
+        <div class="map-park park1"></div>
+        <div class="map-park park2"></div>
+        <div class="map-water"></div>
+      </div>
+
+      <!-- Map Pins -->
+      <div class="pin pin1">
+        <div class="pin-bubble active">🌿 Rizal Park</div>
+        <div class="pin-tail active"></div>
+        <div class="pin-dot active"></div>
+      </div>
+      <div class="pin pin2">
+        <div class="pin-bubble">🏛️ Museum</div>
+        <div class="pin-tail"></div>
+        <div class="pin-dot"></div>
+      </div>
+      <div class="pin pin3">
+        <div class="pin-bubble">🍜 Food Hub</div>
+        <div class="pin-tail"></div>
+        <div class="pin-dot"></div>
+      </div>
+      <div class="pin pin4">
+        <div class="pin-bubble">🏨 Hotel</div>
+        <div class="pin-tail"></div>
+        <div class="pin-dot"></div>
+      </div>
+      <div class="pin pin5">
+        <div class="pin-bubble">🏔️ Trail</div>
+        <div class="pin-tail"></div>
+        <div class="pin-dot"></div>
+      </div>
+
+      <!-- Top bar -->
+      <div class="map-topbar">
+        <div class="map-search">
+          <div class="map-search-icon">🔍</div>
+          <div class="map-search-text">Search places, restaurants…</div>
+          <div class="map-filter-btn">⚙️</div>
+        </div>
+      </div>
+
+      <!-- Category chips -->
+      <div class="map-chips">
+        <div class="chip active">🌿 All</div>
+        <div class="chip">🏛️ Culture</div>
+        <div class="chip">🌄 Nature</div>
+        <div class="chip">🍜 Food</div>
+        <div class="chip">🏕️ Adventure</div>
+        <div class="chip">🏨 Hotels</div>
+        <div class="chip">🆘 Emergency</div>
+      </div>
+
+      <!-- Offline badge -->
+      <div class="offline-badge">
+        <div class="offline-dot"></div>
+        <div class="offline-text">OFFLINE MAP</div>
+      </div>
+
+      <!-- Zoom controls -->
+      <div class="map-controls">
+        <div class="map-ctrl-btn">+</div>
+        <div class="map-ctrl-btn">−</div>
+        <div class="map-ctrl-btn">📍</div>
+      </div>
+
+      <!-- Bottom sheet -->
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div class="sheet-title">Nearby Places</div>
+          <div class="sheet-count">24 spots found</div>
+        </div>
+        <div class="places-row">
+          <div class="place-card">
+            <div class="place-card-img nature">
+              <div class="place-card-badge">Nature</div>
+              <div class="place-card-save">🤍</div>
+              🌿
+            </div>
+            <div class="place-card-body">
+              <div class="place-card-name">Rizal Park</div>
+              <div class="place-card-meta">
+                <div class="place-card-dist">📍 0.3 km</div>
+                <div class="place-card-stars">★ 4.8</div>
+              </div>
+            </div>
+          </div>
+          <div class="place-card">
+            <div class="place-card-img culture">
+              <div class="place-card-badge">Culture</div>
+              <div class="place-card-save">❤️</div>
+              🏛️
+            </div>
+            <div class="place-card-body">
+              <div class="place-card-name">National Museum of History</div>
+              <div class="place-card-meta">
+                <div class="place-card-dist">📍 1.2 km</div>
+                <div class="place-card-stars">★ 4.9</div>
+              </div>
+            </div>
+          </div>
+          <div class="place-card">
+            <div class="place-card-img food">
+              <div class="place-card-badge">Food</div>
+              <div class="place-card-save">🤍</div>
+              🍜
+            </div>
+            <div class="place-card-body">
+              <div class="place-card-name">Binondo Food Walk</div>
+              <div class="place-card-meta">
+                <div class="place-card-dist">📍 2.1 km</div>
+                <div class="place-card-stars">★ 4.7</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item active"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">① Map View</div>
+</div>
+
+<!-- ══════════════════ PHONE B: LIST / CATEGORY VIEW ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="list-screen">
+      <div class="list-header">
+        <div class="list-header-inner">
+          <div class="list-back">← </div>
+          <div class="list-heading">Destination Guide</div>
+          <div class="list-sub">Manila · 24 places available offline</div>
+        </div>
+      </div>
+
+      <!-- Category tabs -->
+      <div class="cat-tabs">
+        <div class="cat-tab active">🌿 All</div>
+        <div class="cat-tab">🏛️ Culture</div>
+        <div class="cat-tab">🌄 Nature</div>
+        <div class="cat-tab">🍜 Food</div>
+        <div class="cat-tab">🏕️ Adventure</div>
+      </div>
+
+      <div class="list-scroll">
+        <!-- Place items -->
+        <div style="margin-top:16px;"></div>
+
+        <div class="place-item">
+          <div class="item-thumb nature">🌿</div>
+          <div class="item-info">
+            <div class="item-name">Rizal Park</div>
+            <div class="item-addr">Ermita, Manila · Open 24hrs</div>
+            <div class="item-tags">
+              <span class="item-tag tag-nature">Nature</span>
+              <span class="item-tag tag-free">Free</span>
+            </div>
+          </div>
+          <div class="item-right">
+            <div class="item-rating">★ 4.8</div>
+            <div class="item-dist">0.3 km</div>
+            <div class="item-offline">✓ Offline</div>
+          </div>
+        </div>
+
+        <div class="place-item">
+          <div class="item-thumb culture">🏛️</div>
+          <div class="item-info">
+            <div class="item-name">National Museum of History</div>
+            <div class="item-addr">Padre Burgos Ave · 9AM–6PM</div>
+            <div class="item-tags">
+              <span class="item-tag tag-culture">Culture</span>
+              <span class="item-tag tag-free">Free</span>
+            </div>
+          </div>
+          <div class="item-right">
+            <div class="item-rating">★ 4.9</div>
+            <div class="item-dist">1.2 km</div>
+            <div class="item-offline">✓ Offline</div>
+          </div>
+        </div>
+
+        <div class="place-item">
+          <div class="item-thumb food">🍜</div>
+          <div class="item-info">
+            <div class="item-name">Binondo Food Walk</div>
+            <div class="item-addr">Chinatown, Manila · All day</div>
+            <div class="item-tags">
+              <span class="item-tag tag-food">Food</span>
+            </div>
+          </div>
+          <div class="item-right">
+            <div class="item-rating">★ 4.7</div>
+            <div class="item-dist">2.1 km</div>
+            <div class="item-offline">✓ Offline</div>
+          </div>
+        </div>
+
+        <div class="place-item">
+          <div class="item-thumb adventure">🏕️</div>
+          <div class="item-info">
+            <div class="item-name">Mt. Makiling Trail</div>
+            <div class="item-addr">Los Baños, Laguna · 5AM–12PM</div>
+            <div class="item-tags">
+              <span class="item-tag tag-adventure">Adventure</span>
+            </div>
+          </div>
+          <div class="item-right">
+            <div class="item-rating">★ 4.6</div>
+            <div class="item-dist">56 km</div>
+            <div class="item-offline">✓ Offline</div>
+          </div>
+        </div>
+
+        <div class="place-item">
+          <div class="item-thumb culture">🎭</div>
+          <div class="item-info">
+            <div class="item-name">Intramuros Walking Tour</div>
+            <div class="item-addr">Intramuros, Manila · 8AM–5PM</div>
+            <div class="item-tags">
+              <span class="item-tag tag-culture">Culture</span>
+            </div>
+          </div>
+          <div class="item-right">
+            <div class="item-rating">★ 4.9</div>
+            <div class="item-dist">1.8 km</div>
+            <div class="item-offline">✓ Offline</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+        <div class="nav-item active"><div class="nav-icon">🗺️</div><div class="nav-label">Explore</div></div>
+        <div class="nav-item"><div class="nav-icon">📅</div><div class="nav-label">Trips</div></div>
+        <div class="nav-item"><div class="nav-icon">⭐</div><div class="nav-label">Reviews</div></div>
+        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">② List / Category View</div>
+</div>
+
+<!-- ══════════════════ PHONE C: PLACE DETAIL ══════════════════ -->
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="detail-screen">
+
+      <!-- Hero -->
+      <div class="detail-hero">
+        🌿
+        <div class="detail-hero-overlay"></div>
+        <div class="detail-back-btn">←</div>
+        <div class="detail-save-btn">🤍</div>
+        <div class="detail-hero-text">
+          <div class="detail-hero-cat">Nature · Free Entry</div>
+          <div class="detail-hero-name">Rizal Park</div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="detail-body">
+        <!-- Meta pills -->
+        <div class="detail-meta-row">
+          <div class="meta-pill">
+            <div class="meta-pill-icon">★</div>
+            <div>
+              <div class="meta-pill-text">4.8 / 5</div>
+              <div class="meta-pill-sub">312 reviews</div>
+            </div>
+          </div>
+          <div class="meta-pill">
+            <div class="meta-pill-icon">🕐</div>
+            <div>
+              <div class="meta-pill-text">Open 24hrs</div>
+              <div class="meta-pill-sub">All week</div>
+            </div>
+          </div>
+          <div class="meta-pill">
+            <div class="meta-pill-icon">📍</div>
+            <div>
+              <div class="meta-pill-text">0.3 km away</div>
+              <div class="meta-pill-sub">~5 min walk</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="detail-section-title">About this place</div>
+        <div class="detail-desc">
+          Rizal Park, also known as Luneta, is a historic urban park in Manila. It is one of the largest urban parks in Asia and a popular landmark celebrating Philippine national hero José Rizal.
+        </div>
+
+        <!-- Location map -->
+        <div class="detail-section-title">Location</div>
+        <div class="mini-map">
+          <div class="mini-map-pin">📍</div>
+          <div class="mini-map-label">View full map →</div>
+        </div>
+
+        <!-- Facilities -->
+        <div class="detail-section-title">Facilities</div>
+        <div class="facilities-row">
+          <div class="facility"><div class="facility-icon">🚻</div><div class="facility-label">Restroom</div></div>
+          <div class="facility"><div class="facility-icon">🅿️</div><div class="facility-label">Parking</div></div>
+          <div class="facility"><div class="facility-icon">♿</div><div class="facility-label">Accessible</div></div>
+          <div class="facility"><div class="facility-icon">🍽️</div><div class="facility-label">Food Stalls</div></div>
+          <div class="facility"><div class="facility-icon">📸</div><div class="facility-label">Photo Spot</div></div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="detail-cta">
+        <button class="cta-btn cta-secondary">🗺️ Directions</button>
+        <button class="cta-btn cta-primary">📅 Add to Trip</button>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">③ Place Detail</div>
+</div>
+
+</body>
+</html>
